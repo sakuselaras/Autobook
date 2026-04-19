@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Auto Book Creator - Premium Cloud Sync</title>
+    <title>Auto Book Creator - Cloud Sync</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -25,21 +25,22 @@
                 <i class="fas fa-book-open"></i>
             </div>
             <h1 class="text-2xl font-black text-slate-800 mb-2">Auto Book Creator</h1>
-            <p class="text-xs text-slate-500 mb-8 font-medium italic">Wujudkan e-book impian anda secara dalam talian.</p>
+            <p class="text-xs text-slate-500 mb-8 font-medium italic">Sila log masuk atau daftar untuk mula.</p>
+            
             <div class="space-y-4 text-left">
                 <input type="email" id="auth-email" placeholder="E-mel" class="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 font-medium text-sm">
                 <input type="password" id="auth-password" placeholder="Kata Laluan (min. 6 aksara)" class="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 font-medium text-sm">
                 <div class="grid grid-cols-2 gap-4 pt-4">
-                    <button onclick="window.loginUser()" class="bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-2xl font-bold transition-all">LOG MASUK</button>
-                    <button onclick="window.registerUser()" class="bg-slate-800 hover:bg-slate-900 text-white py-4 rounded-2xl font-bold transition-all">DAFTAR</button>
+                    <button onclick="window.loginUser()" class="bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-2xl font-black transition-all shadow-md">LOG MASUK</button>
+                    <button onclick="window.registerUser()" class="bg-slate-800 hover:bg-slate-900 text-white py-4 rounded-2xl font-black transition-all shadow-md">DAFTAR</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- KEPALA HALAMAN -->
+    <!-- HEADER -->
     <header class="bg-white border-b px-8 py-4 flex justify-between items-center shadow-sm z-50">
-        <h1 class="font-black text-emerald-600 text-xl tracking-tighter">Auto Book <span class="bg-emerald-100 text-emerald-700 text-[10px] px-2 py-1 rounded-md ml-1 font-bold uppercase tracking-widest">v8.7 Online</span></h1>
+        <h1 class="font-black text-emerald-600 text-xl tracking-tighter">Auto Book <span class="bg-emerald-100 text-emerald-700 text-[10px] px-2 py-1 rounded-md ml-1 font-bold uppercase tracking-widest">Cloud v8.7</span></h1>
         <div class="flex items-center gap-6">
             <div class="flex flex-col items-end">
                 <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Baki Kredit</span>
@@ -55,7 +56,7 @@
     <main class="flex-grow flex overflow-hidden">
         <div class="w-full lg:w-1/2 overflow-y-auto p-12 border-r bg-white space-y-12 custom-scrollbar">
             
-            <!-- BAHAGIAN TOP UP -->
+            <!-- SECTION: TOP UP -->
             <div class="bg-slate-50 p-8 rounded-[2rem] border border-slate-100 space-y-4">
                 <h3 class="text-sm font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
                     <i class="fas fa-plus-circle text-emerald-500"></i> Tambah Nilai Kredit
@@ -66,10 +67,10 @@
                 </div>
             </div>
 
-            <!-- BAHAGIAN PENJANA -->
+            <!-- SECTION: GENERATOR -->
             <div id="panel-1" class="space-y-8 animate-fade-in">
                 <h2 class="text-3xl font-black text-slate-800 tracking-tight leading-tight">Apakah topik buku <br>yang ingin anda bina?</h2>
-                <textarea id="in-niche" rows="5" class="w-full bg-slate-50 border-2 border-slate-100 p-6 rounded-[2rem] outline-none focus:border-emerald-500 transition-all font-medium text-base shadow-inner" placeholder="Contoh: Panduan berjaya jualan dalam talian untuk pemula..."></textarea>
+                <textarea id="in-niche" rows="5" class="w-full bg-slate-50 border-2 border-slate-100 p-6 rounded-[2rem] outline-none focus:border-emerald-500 transition-all font-medium text-base shadow-inner" placeholder="Contoh: Panduan sukses jualan online untuk pemula..."></textarea>
                 <button onclick="window.generateStep1()" id="btn-1" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white p-6 rounded-[2rem] font-black text-lg shadow-xl shadow-emerald-100 transition-all flex items-center justify-center gap-3">
                     <i class="fas fa-wand-sparkles"></i> JANA KONSEP UTAMA
                 </button>
@@ -86,13 +87,12 @@
             </div>
         </div>
 
-        <!-- Kawasan Pratonton -->
         <div class="hidden lg:flex w-1/2 bg-slate-100 overflow-auto p-12 justify-center custom-scrollbar">
             <div id="master-preview" class="page-paper flex flex-col">
                 <div id="prev-content" class="text-slate-800 flex-grow">
                     <div class="flex flex-col items-center justify-center h-full opacity-10 py-60">
                         <i class="fas fa-book-open text-8xl mb-6"></i>
-                        <p class="font-black uppercase tracking-[0.5em] text-xs">Kawasan Pratonton</p>
+                        <p class="font-black uppercase tracking-[0.5em] text-xs">Preview Area</p>
                     </div>
                 </div>
             </div>
@@ -104,14 +104,15 @@
         import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Konfigurasi Firebase - Pastikan Tiada Ruang Kosong
+        // CONFIG FIREBASE ASLI (VERIFIED FROM image_5eb9a2.png)
         const firebaseConfig = {
             apiKey: "AIzaSyD02K_dydVWWwry3Q8BSP7JuP9WyEj0mE8",
             authDomain: "autobook-creator.firebaseapp.com",
             projectId: "autobook-creator",
             storageBucket: "autobook-creator.firebasestorage.app",
             messagingSenderId: "720531474052",
-            appId: "1:720531474052:web:63ef2e0fb0e14ef92f64d1"
+            appId: "1:720531474052:web:63ef2e0fb0e14ef92f64d1",
+            measurementId: "G-VXFWLDCQZB"
         };
 
         const app = initializeApp(firebaseConfig);
@@ -126,111 +127,80 @@
             if (user) {
                 window.currentUser = user;
                 document.getElementById('auth-overlay').classList.add('hidden');
-                
-                // Pantau Profil & Kredit secara langsung
                 onSnapshot(doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'data'), (snap) => {
                     if (snap.exists()) {
                         window.userCredits = snap.data().freeCredits || 0;
                         document.getElementById('credit-count').innerText = window.userCredits.toLocaleString('ms-MY');
                     }
-                }, (err) => console.error("Ralat Firestore:", err));
+                });
             } else {
                 window.currentUser = null;
                 document.getElementById('auth-overlay').classList.remove('hidden');
             }
         });
 
-        // Logika Penebusan Baucar (Akumulatif)
         window.redeemVoucher = async () => {
             const codeInput = document.getElementById('voucher-input');
             const code = codeInput.value.trim().toUpperCase();
-            if(!code || !window.currentUser) return alert("Sila masukkan kod baucar!");
-
-            const btn = document.getElementById('btn-redeem');
-            btn.disabled = true; btn.innerText = "...";
+            if(!code || !window.currentUser) return alert("Masukkan kod!");
 
             try {
                 const vRef = doc(db, 'artifacts', appId, 'public', 'data', 'vouchers', code);
                 const vSnap = await getDoc(vRef);
-
                 if (vSnap.exists()) {
                     const vData = vSnap.data();
                     if ((vData.usageCount || 0) >= (vData.maxUsage || 1)) {
-                        alert("Maaf, baucar ini telah habis kuota.");
+                        alert("Baucar tamat tempoh.");
                     } else {
-                        const bakiLama = window.userCredits;
-                        const jumlahBaucar = vData.amount;
-                        const jumlahBaru = bakiLama + jumlahBaucar;
-
-                        const userRef = doc(db, 'artifacts', appId, 'users', window.currentUser.uid, 'profile', 'data');
-                        await updateDoc(userRef, { freeCredits: jumlahBaru });
-
-                        await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', window.currentUser.uid), {
-                            email: window.currentUser.email,
-                            freeCredits: jumlahBaru,
-                            lastActive: new Date().toISOString()
-                        }, { merge: true });
-
+                        const totalBaru = window.userCredits + vData.amount;
+                        await updateDoc(doc(db, 'artifacts', appId, 'users', window.currentUser.uid, 'profile', 'data'), { freeCredits: totalBaru });
+                        await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', window.currentUser.uid), { email: window.currentUser.email, freeCredits: totalBaru }, { merge: true });
                         await updateDoc(vRef, { usageCount: (vData.usageCount || 0) + 1 });
-
-                        alert(`Berjaya! Baki anda bertambah ${jumlahBaucar}. Jumlah keseluruhan: ${jumlahBaru}`);
+                        alert(`Berjaya! Baki baru: ${totalBaru}`);
                         codeInput.value = "";
                     }
-                } else {
-                    alert("Kod Baucar tidak dijumpai.");
-                }
-            } catch (e) { alert("Ralat sistem berlaku."); }
-            btn.disabled = false; btn.innerText = "Guna";
+                } else { alert("Kod tidak wujud."); }
+            } catch (e) { alert("Ralat sistem."); }
         };
 
         window.loginUser = async () => {
-            const email = document.getElementById('auth-email').value;
-            const pwd = document.getElementById('auth-password').value;
-            try { await signInWithEmailAndPassword(auth, email, pwd); } catch (err) { alert("Log Masuk Gagal!"); }
+            const email = document.getElementById('auth-email').value.trim();
+            const pwd = document.getElementById('auth-password').value.trim();
+            try { await signInWithEmailAndPassword(auth, email, pwd); } catch (err) { alert("Ralat Log Masuk: " + err.message); }
         };
 
         window.registerUser = async () => {
-            const email = document.getElementById('auth-email').value;
-            const pwd = document.getElementById('auth-password').value;
+            const email = document.getElementById('auth-email').value.trim();
+            const pwd = document.getElementById('auth-password').value.trim();
             try {
                 const res = await createUserWithEmailAndPassword(auth, email, pwd);
-                const dataAwal = { email, freeCredits: 200, status: 'active', createdAt: new Date().toISOString() };
-                await setDoc(doc(db, 'artifacts', appId, 'users', res.user.uid, 'profile', 'data'), dataAwal);
-                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', res.user.uid), dataAwal);
-                alert("Pendaftaran Berjaya! Anda mendapat bonus 200 Kredit.");
-            } catch (err) { alert(err.message); }
+                const init = { email, freeCredits: 200, status: 'active', createdAt: new Date().toISOString() };
+                await setDoc(doc(db, 'artifacts', appId, 'users', res.user.uid, 'profile', 'data'), init);
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', res.user.uid), init);
+                alert("Berjaya Daftar! Percuma 200 kredit.");
+            } catch (err) { alert("Ralat Daftar: " + err.message); }
         };
 
         window.logoutUser = () => signOut(auth);
 
         async function fetchAI(prompt, system, schema) {
-            const res = await fetch('/api/gemini', { 
-                method: 'POST', 
-                headers: { 'Content-Type': 'application/json' }, 
-                body: JSON.stringify({ prompt, system, schema }) 
-            });
+            const res = await fetch('/api/gemini', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt, system, schema }) });
             return await res.json();
         }
 
         window.generateStep1 = async () => {
-            if (window.userCredits < 5) return alert("Kredit tidak mencukupi. Sila tambah nilai.");
+            if (window.userCredits < 5) return alert("Kredit tidak cukup.");
             const niche = document.getElementById('in-niche').value;
-            if(!niche) return alert("Sila isi topik!");
+            if(!niche) return alert("Isi topik!");
             const btn = document.getElementById('btn-1');
-            btn.disabled = true; btn.innerText = "AI sedang menjana...";
-            const res = await fetchAI(`Buatkan tajuk buku premium tentang ${niche}`, "Penulis Profesional", { type: "OBJECT", properties: { title: { type: "STRING" } }, required: ["title"] });
-            
+            btn.disabled = true; btn.innerText = "...";
+            const res = await fetchAI(`Tajuk buku untuk ${niche}`, "Penulis Pro", { type: "OBJECT", properties: { title: { type: "STRING" } }, required: ["title"] });
             document.getElementById('edit-title').value = res.title;
             document.getElementById('res-1').classList.remove('hidden');
-            document.getElementById('prev-content').innerHTML = `<h1 style="text-align:center; font-size: 28pt; color: #2d5a27; padding-top: 100px; font-weight: 800; text-transform: uppercase;">${res.title}</h1>`;
-            
-            const userRef = doc(db, 'artifacts', appId, 'users', window.currentUser.uid, 'profile', 'data');
-            await updateDoc(userRef, { freeCredits: window.userCredits - 5 });
-            
+            document.getElementById('prev-content').innerHTML = `<h1 style="text-align:center; padding-top:100px; font-weight:800; font-size:28pt;">${res.title}</h1>`;
+            await updateDoc(doc(db, 'artifacts', appId, 'users', window.currentUser.uid, 'profile', 'data'), { freeCredits: window.userCredits - 5 });
             btn.disabled = false; btn.innerText = "JANA KONSEP UTAMA";
         };
-
-        window.lockStep = (c, n) => alert("Konsep Disimpan!");
     </script>
 </body>
 </html>
