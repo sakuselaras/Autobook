@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="ms">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -18,80 +18,81 @@
 </head>
 <body class="h-screen flex flex-col overflow-hidden bg-slate-50">
 
-    <!-- LOGIN OVERLAY -->
+    <!-- PAPARAN LOG MASUK -->
     <div id="auth-overlay" class="fixed inset-0 bg-slate-900/95 backdrop-blur-md z-[300] flex items-center justify-center p-4">
         <div class="bg-white rounded-[2.5rem] p-10 w-full max-w-md shadow-2xl text-center border border-emerald-100">
             <div class="w-20 h-20 bg-emerald-600 rounded-3xl mx-auto flex items-center justify-center text-white text-3xl mb-6 shadow-lg transform -rotate-6">
                 <i class="fas fa-book-open"></i>
             </div>
             <h1 class="text-2xl font-black text-slate-800 mb-2">Auto Book Creator</h1>
-            <p class="text-xs text-slate-500 mb-8 font-medium italic">Wujudkan e-book impian Anda secara online.</p>
+            <p class="text-xs text-slate-500 mb-8 font-medium italic">Wujudkan e-book impian anda secara dalam talian.</p>
             <div class="space-y-4 text-left">
-                <input type="email" id="auth-email" placeholder="Email" class="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 font-medium text-sm">
-                <input type="password" id="auth-password" placeholder="Password (min. 6 karakter)" class="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 font-medium text-sm">
+                <input type="email" id="auth-email" placeholder="E-mel" class="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 font-medium text-sm">
+                <input type="password" id="auth-password" placeholder="Kata Laluan (min. 6 aksara)" class="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 font-medium text-sm">
                 <div class="grid grid-cols-2 gap-4 pt-4">
-                    <button onclick="window.loginUser()" class="bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-2xl font-black transition-all">MASUK</button>
-                    <button onclick="window.registerUser()" class="bg-slate-800 hover:bg-slate-900 text-white py-4 rounded-2xl font-black transition-all">DAFTAR</button>
+                    <button onclick="window.loginUser()" class="bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-2xl font-bold transition-all">LOG MASUK</button>
+                    <button onclick="window.registerUser()" class="bg-slate-800 hover:bg-slate-900 text-white py-4 rounded-2xl font-bold transition-all">DAFTAR</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- HEADER -->
+    <!-- KEPALA HALAMAN -->
     <header class="bg-white border-b px-8 py-4 flex justify-between items-center shadow-sm z-50">
         <h1 class="font-black text-emerald-600 text-xl tracking-tighter">Auto Book <span class="bg-emerald-100 text-emerald-700 text-[10px] px-2 py-1 rounded-md ml-1 font-bold uppercase tracking-widest">v8.7 Online</span></h1>
         <div class="flex items-center gap-6">
             <div class="flex flex-col items-end">
-                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Kredit Tersisa</span>
+                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Baki Kredit</span>
                 <div class="flex items-center gap-2 text-emerald-600 font-black">
                     <i class="fas fa-gem text-xs"></i><span id="credit-count" class="text-lg">0</span>
                 </div>
             </div>
-            <button onclick="window.logoutUser()" class="text-slate-400 hover:text-red-500 font-bold text-xs transition-colors uppercase tracking-widest">Logout <i class="fas fa-sign-out-alt ml-1"></i></button>
+            <button onclick="window.logoutUser()" class="text-slate-400 hover:text-red-500 font-bold text-xs transition-colors uppercase tracking-widest">Log Keluar <i class="fas fa-sign-out-alt ml-1"></i></button>
         </div>
     </header>
 
-    <!-- WORKSPACE -->
+    <!-- RUANG KERJA -->
     <main class="flex-grow flex overflow-hidden">
         <div class="w-full lg:w-1/2 overflow-y-auto p-12 border-r bg-white space-y-12 custom-scrollbar">
             
-            <!-- SECTION: TOP UP -->
+            <!-- BAHAGIAN TOP UP -->
             <div class="bg-slate-50 p-8 rounded-[2rem] border border-slate-100 space-y-4">
                 <h3 class="text-sm font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
-                    <i class="fas fa-plus-circle text-emerald-500"></i> Top Up Kredit
+                    <i class="fas fa-plus-circle text-emerald-500"></i> Tambah Nilai Kredit
                 </h3>
                 <div class="flex gap-2">
-                    <input type="text" id="voucher-input" placeholder="Masukkan Kode Voucher" class="flex-grow border-2 border-white bg-white p-4 rounded-xl outline-none focus:border-emerald-500 font-black uppercase text-xs shadow-sm">
-                    <button onclick="window.redeemVoucher()" id="btn-redeem" class="bg-slate-800 text-white px-6 rounded-xl font-black text-[10px] uppercase hover:bg-black transition-all">Gunakan</button>
+                    <input type="text" id="voucher-input" placeholder="Masukkan Kod Baucar" class="flex-grow border-2 border-white bg-white p-4 rounded-xl outline-none focus:border-emerald-500 font-black uppercase text-xs shadow-sm">
+                    <button onclick="window.redeemVoucher()" id="btn-redeem" class="bg-slate-800 text-white px-6 rounded-xl font-black text-[10px] uppercase hover:bg-black transition-all">Guna</button>
                 </div>
             </div>
 
-            <!-- SECTION: GENERATOR -->
+            <!-- BAHAGIAN PENJANA -->
             <div id="panel-1" class="space-y-8 animate-fade-in">
-                <h2 class="text-3xl font-black text-slate-800 tracking-tight leading-tight">Apa topik buku <br>yang ingin Anda buat?</h2>
-                <textarea id="in-niche" rows="5" class="w-full bg-slate-50 border-2 border-slate-100 p-6 rounded-[2rem] outline-none focus:border-emerald-500 transition-all font-medium text-base shadow-inner" placeholder="Contoh: Panduan sukses jualan online untuk pemula..."></textarea>
+                <h2 class="text-3xl font-black text-slate-800 tracking-tight leading-tight">Apakah topik buku <br>yang ingin anda bina?</h2>
+                <textarea id="in-niche" rows="5" class="w-full bg-slate-50 border-2 border-slate-100 p-6 rounded-[2rem] outline-none focus:border-emerald-500 transition-all font-medium text-base shadow-inner" placeholder="Contoh: Panduan berjaya jualan dalam talian untuk pemula..."></textarea>
                 <button onclick="window.generateStep1()" id="btn-1" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white p-6 rounded-[2rem] font-black text-lg shadow-xl shadow-emerald-100 transition-all flex items-center justify-center gap-3">
-                    <i class="fas fa-wand-sparkles"></i> GENERATE KONSEP UTAMA
+                    <i class="fas fa-wand-sparkles"></i> JANA KONSEP UTAMA
                 </button>
                 
                 <div id="res-1" class="hidden space-y-6 pt-10 border-t border-slate-100 animate-fade-in">
                     <div class="space-y-2">
-                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Judul E-Book Hasil AI</label>
+                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Tajuk E-Book Hasil AI</label>
                         <input type="text" id="edit-title" class="w-full border-2 border-slate-200 p-5 rounded-2xl font-bold text-slate-800 outline-none focus:border-emerald-500 shadow-sm transition-all">
                     </div>
                     <button onclick="window.lockStep(1, 2)" class="w-full bg-slate-800 hover:bg-black text-white p-6 rounded-2xl font-black shadow-lg transition-all flex items-center justify-center gap-3">
-                        SIMPAN & LANJUT <i class="fas fa-arrow-right"></i>
+                        SIMPAN & TERUSKAN <i class="fas fa-arrow-right"></i>
                     </button>
                 </div>
             </div>
         </div>
 
+        <!-- Kawasan Pratonton -->
         <div class="hidden lg:flex w-1/2 bg-slate-100 overflow-auto p-12 justify-center custom-scrollbar">
             <div id="master-preview" class="page-paper flex flex-col">
                 <div id="prev-content" class="text-slate-800 flex-grow">
                     <div class="flex flex-col items-center justify-center h-full opacity-10 py-60">
                         <i class="fas fa-book-open text-8xl mb-6"></i>
-                        <p class="font-black uppercase tracking-[0.5em] text-xs">Preview Area</p>
+                        <p class="font-black uppercase tracking-[0.5em] text-xs">Kawasan Pratonton</p>
                     </div>
                 </div>
             </div>
@@ -103,6 +104,7 @@
         import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
+        // Konfigurasi Firebase - Pastikan Tiada Ruang Kosong
         const firebaseConfig = {
             apiKey: "AIzaSyD02K_dydVWWwry3Q8BSP7JuP9WyEj0mE8",
             authDomain: "autobook-creator.firebaseapp.com",
@@ -125,75 +127,66 @@
                 window.currentUser = user;
                 document.getElementById('auth-overlay').classList.add('hidden');
                 
-                // Monitor Profile & Kredit
+                // Pantau Profil & Kredit secara langsung
                 onSnapshot(doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'data'), (snap) => {
                     if (snap.exists()) {
                         window.userCredits = snap.data().freeCredits || 0;
-                        document.getElementById('credit-count').innerText = window.userCredits.toLocaleString('id-ID');
+                        document.getElementById('credit-count').innerText = window.userCredits.toLocaleString('ms-MY');
                     }
-                }, (err) => console.error("Firestore Error:", err));
+                }, (err) => console.error("Ralat Firestore:", err));
             } else {
                 window.currentUser = null;
                 document.getElementById('auth-overlay').classList.remove('hidden');
             }
         });
 
-        // ==========================================
-        // LOGIKA VOUCHER (AKUMULATIF)
-        // ==========================================
+        // Logika Penebusan Baucar (Akumulatif)
         window.redeemVoucher = async () => {
             const codeInput = document.getElementById('voucher-input');
             const code = codeInput.value.trim().toUpperCase();
-            if(!code || !window.currentUser) return alert("Masukkan kode voucher!");
+            if(!code || !window.currentUser) return alert("Sila masukkan kod baucar!");
 
             const btn = document.getElementById('btn-redeem');
             btn.disabled = true; btn.innerText = "...";
 
             try {
-                // 1. Cek apakah voucher ada di database Cloud
                 const vRef = doc(db, 'artifacts', appId, 'public', 'data', 'vouchers', code);
                 const vSnap = await getDoc(vRef);
 
                 if (vSnap.exists()) {
                     const vData = vSnap.data();
-                    
-                    // 2. Cek limit pemakaian
                     if ((vData.usageCount || 0) >= (vData.maxUsage || 1)) {
-                        alert("Maaf, voucher ini sudah habis kuotanya.");
+                        alert("Maaf, baucar ini telah habis kuota.");
                     } else {
-                        // LOGIKA UTAMA: AKUMULASI (Baris 151 - 153)
-                        const sisaTokenLama = window.userCredits;
-                        const jumlahDariVoucher = vData.amount;
-                        const totalBaru = sisaTokenLama + jumlahDariVoucher;
+                        const bakiLama = window.userCredits;
+                        const jumlahBaucar = vData.amount;
+                        const jumlahBaru = bakiLama + jumlahBaucar;
 
-                        // 3. Simpan ke Firestore User (Baris 156 - 157)
                         const userRef = doc(db, 'artifacts', appId, 'users', window.currentUser.uid, 'profile', 'data');
-                        await updateDoc(userRef, { freeCredits: totalBaru });
+                        await updateDoc(userRef, { freeCredits: jumlahBaru });
 
-                        // 4. Update riwayat publik (untuk admin)
                         await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', window.currentUser.uid), {
                             email: window.currentUser.email,
-                            freeCredits: totalBaru,
+                            freeCredits: jumlahBaru,
                             lastActive: new Date().toISOString()
                         }, { merge: true });
 
-                        // 5. Tambah jumlah pemakaian voucher
                         await updateDoc(vRef, { usageCount: (vData.usageCount || 0) + 1 });
 
-                        alert(`Berhasil! Stok Anda bertambah ${jumlahDariVoucher}. Total: ${totalBaru}`);
+                        alert(`Berjaya! Baki anda bertambah ${jumlahBaucar}. Jumlah keseluruhan: ${jumlahBaru}`);
                         codeInput.value = "";
                     }
                 } else {
-                    alert("Kode Voucher tidak ditemukan.");
+                    alert("Kod Baucar tidak dijumpai.");
                 }
-            } catch (e) { alert("Terjadi kesalahan sistem."); }
-            btn.disabled = false; btn.innerText = "Gunakan";
+            } catch (e) { alert("Ralat sistem berlaku."); }
+            btn.disabled = false; btn.innerText = "Guna";
         };
 
         window.loginUser = async () => {
             const email = document.getElementById('auth-email').value;
             const pwd = document.getElementById('auth-password').value;
-            try { await signInWithEmailAndPassword(auth, email, pwd); } catch (err) { alert("Login Gagal!"); }
+            try { await signInWithEmailAndPassword(auth, email, pwd); } catch (err) { alert("Log Masuk Gagal!"); }
         };
 
         window.registerUser = async () => {
@@ -201,10 +194,10 @@
             const pwd = document.getElementById('auth-password').value;
             try {
                 const res = await createUserWithEmailAndPassword(auth, email, pwd);
-                const initialData = { email, freeCredits: 200, status: 'active', createdAt: new Date().toISOString() };
-                await setDoc(doc(db, 'artifacts', appId, 'users', res.user.uid, 'profile', 'data'), initialData);
-                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', res.user.uid), initialData);
-                alert("Daftar Berhasil! Anda mendapat bonus awal 200 Kredit.");
+                const dataAwal = { email, freeCredits: 200, status: 'active', createdAt: new Date().toISOString() };
+                await setDoc(doc(db, 'artifacts', appId, 'users', res.user.uid, 'profile', 'data'), dataAwal);
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', res.user.uid), dataAwal);
+                alert("Pendaftaran Berjaya! Anda mendapat bonus 200 Kredit.");
             } catch (err) { alert(err.message); }
         };
 
@@ -220,25 +213,24 @@
         }
 
         window.generateStep1 = async () => {
-            if (window.userCredits < 5) return alert("Kredit Anda tidak cukup. Silakan Top Up.");
+            if (window.userCredits < 5) return alert("Kredit tidak mencukupi. Sila tambah nilai.");
             const niche = document.getElementById('in-niche').value;
-            if(!niche) return alert("Isi topik dulu!");
+            if(!niche) return alert("Sila isi topik!");
             const btn = document.getElementById('btn-1');
-            btn.disabled = true; btn.innerText = "AI sedang berpikir...";
-            const res = await fetchAI(`Buatkan judul buku premium tentang ${niche}`, "Penulis Pro", { type: "OBJECT", properties: { title: { type: "STRING" } }, required: ["title"] });
+            btn.disabled = true; btn.innerText = "AI sedang menjana...";
+            const res = await fetchAI(`Buatkan tajuk buku premium tentang ${niche}`, "Penulis Profesional", { type: "OBJECT", properties: { title: { type: "STRING" } }, required: ["title"] });
             
             document.getElementById('edit-title').value = res.title;
             document.getElementById('res-1').classList.remove('hidden');
             document.getElementById('prev-content').innerHTML = `<h1 style="text-align:center; font-size: 28pt; color: #2d5a27; padding-top: 100px; font-weight: 800; text-transform: uppercase;">${res.title}</h1>`;
             
-            // Kurangi Kredit
             const userRef = doc(db, 'artifacts', appId, 'users', window.currentUser.uid, 'profile', 'data');
             await updateDoc(userRef, { freeCredits: window.userCredits - 5 });
             
-            btn.disabled = false; btn.innerText = "Generate Konsep Utama";
+            btn.disabled = false; btn.innerText = "JANA KONSEP UTAMA";
         };
 
-        window.lockStep = (c, n) => alert("Konsep Tersimpan!");
+        window.lockStep = (c, n) => alert("Konsep Disimpan!");
     </script>
 </body>
 </html>
