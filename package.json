@@ -1,0 +1,17 @@
+{
+  "name": "auto-book-generation",
+  "version": "1.0.0",
+  "description": "AI content generator with Gemini",
+  "main": "index.js",
+  "scripts": {
+    "start": "node api/generate.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1"
+  }
+}
