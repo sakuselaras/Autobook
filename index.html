@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Auto Book Creator - Cloud Sync</title>
+    <title>Auto Book Creator - Cloud Sync Final</title>
     <!-- Framework & UI Library -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Gunakan versi library yang spesifik dan stabil -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.42.0/dist/umd/supabase.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
@@ -18,30 +19,21 @@
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #10b981; border-radius: 10px; }
         .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .page-shadow { box-shadow: 0 20px 50px rgba(0,0,0,0.05); }
     </style>
 </head>
 <body>
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect } = React;
+        const { useState, useEffect, useCallback } = React;
 
         // --- KONFIGURASI SUPABASE ---
-        // Sila isi data di bawah dari Dashboard Supabase > Settings > API
-        const SUPABASE_URL = ""; 
-        const SUPABASE_KEY = "";
-        
-        // Inisialisasi selamat untuk mengelakkan ralat 'supabaseUrl is required'
-        let supabase = null;
-        if (SUPABASE_URL && SUPABASE_KEY) {
-            try {
-                supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-            } catch (e) {
-                console.error("Gagal memulakan Supabase:", e);
-            }
-        }
+        const SUPABASE_URL = "https://pgefqhpomzjbqbqobkta.supabase.co"; 
+        const SUPABASE_KEY = "sb_publishable_Y03yI5L3PSXl2X9VXhwRcQ_OID1tZdo"; 
 
         function App() {
+            const [client, setClient] = useState(null);
             const [user, setUser] = useState(null);
             const [profile, setProfile] = useState({ tokens: 0 });
             const [packages, setPackages] = useState([]);
@@ -52,194 +44,247 @@
             const [authPassword, setAuthPassword] = useState('');
             const [isRegistering, setIsRegistering] = useState(false);
             const [previewContent, setPreviewContent] = useState(null);
+            const [authLoading, setAuthLoading] = useState(false);
 
-            // Inisialisasi Auth
+            // 1. Inisialisasi Klien Supabase Secara Aman
             useEffect(() => {
-                if (!supabase) return;
-                supabase.auth.getSession().then(({ data: { session } }) => {
-                    setUser(session?.user ?? null);
-                });
-                const { data: { subscription } } = supabase.auth.onAuthStateChanged((_event, session) => {
-                    setUser(session?.user ?? null);
-                });
-                return () => subscription.unsubscribe();
+                const initSupabase = () => {
+                    if (window.supabase && SUPABASE_URL && SUPABASE_KEY) {
+                        const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+                        setClient(sb);
+                    } else {
+                        // Jika belum sedia, tunggu 100ms dan cuba lagi
+                        setTimeout(initSupabase, 100);
+                    }
+                };
+                initSupabase();
             }, []);
 
-            // Muat Data Profil & Paket
+            // 2. Sesi Auth & Pemantauan Status
             useEffect(() => {
-                if (user && supabase) {
-                    fetchUserData();
+                if (!client) return;
+                
+                client.auth.getSession().then(({ data }) => {
+                    setUser(data?.session?.user ?? null);
+                });
+
+                const { data: { subscription } } = client.auth.onAuthStateChanged((_event, session) => {
+                    setUser(session?.user ?? null);
+                    if (!session) {
+                        setProfile({ tokens: 0 });
+                        setPackages([]);
+                    }
+                });
+
+                return () => {
+                    if (subscription) subscription.unsubscribe();
+                };
+            }, [client]);
+
+            // 3. Muat Data (Profil & Pakej)
+            const fetchUserData = useCallback(async () => {
+                if (!client || !user) return;
+                try {
+                    const { data: prof, error: profErr } = await client
+                        .from('profiles')
+                        .select('*')
+                        .eq('id', user.id)
+                        .single();
+                    
+                    if (prof) {
+                        setProfile(prof);
+                    } else if (profErr) {
+                        // Automatik bina profil jika belum wujud
+                        const { data: newProf } = await client
+                            .from('profiles')
+                            .insert([{ id: user.id, email: user.email, tokens: 200 }])
+                            .select()
+                            .single();
+                        if (newProf) setProfile(newProf);
+                    }
+
+                    const { data: pkgs } = await client
+                        .from('packages')
+                        .select('*')
+                        .eq('is_active', true)
+                        .order('token_amount', { ascending: true });
+                    
+                    if (pkgs) setPackages(pkgs);
+                } catch (err) {
+                    console.error("Ralat data:", err);
                 }
-            }, [user]);
+            }, [client, user]);
 
-            const fetchUserData = async () => {
-                if (!supabase) return;
-                // Ambil Profil
-                const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-                if (prof) setProfile(prof);
+            useEffect(() => {
+                fetchUserData();
+            }, [fetchUserData]);
 
-                // Ambil Paket dari Admin
-                const { data: pkgs } = await supabase.from('packages').select('*').eq('is_active', true).order('token_amount', { ascending: true });
-                if (pkgs) setPackages(pkgs);
-            };
-
-            const handleAuth = async () => {
-                if (!supabase) return alert("Sila lengkapkan konfigurasi SUPABASE_URL dahulu.");
+            // 4. Kendali Autentikasi
+            const handleAuth = async (e) => {
+                if (e) e.preventDefault();
+                if (!client) return;
                 if (!authEmail || !authPassword) return alert("Sila isi e-mel dan kata laluan!");
-                setLoading(true);
+                
+                setAuthLoading(true);
                 try {
                     if (isRegistering) {
-                        const { data, error } = await supabase.auth.signUp({ email: authEmail, password: authPassword });
+                        const { data, error } = await client.auth.signUp({ email: authEmail, password: authPassword });
                         if (error) throw error;
-                        await supabase.from('profiles').insert([{ id: data.user.id, email: authEmail, tokens: 200 }]);
-                        alert("Daftar berjaya! Bonus 200 Token diberikan.");
+                        alert("Pendaftaran berjaya! Sila log masuk.");
                     } else {
-                        const { error } = await supabase.auth.signInWithPassword({ email: authEmail, password: authPassword });
+                        const { error } = await client.auth.signInWithPassword({ email: authEmail, password: authPassword });
                         if (error) throw error;
                     }
                 } catch (err) { alert(err.message); }
-                setLoading(false);
+                setAuthLoading(false);
             };
 
+            // 5. Kendali Baucar
             const handleRedeem = async () => {
-                if (!supabase) return;
-                if (!voucherCode) return;
+                if (!client || !voucherCode) return;
                 setLoading(true);
                 const code = voucherCode.trim().toUpperCase();
-                const { data: v } = await supabase.from('vouchers').select('*').eq('code', code).single();
-                
-                if (!v) {
-                    alert("Kod tidak sah!");
-                } else if (v.usage_count >= v.max_usage) {
-                    alert("Baucar sudah digunakan!");
-                } else {
-                    const newTokens = profile.tokens + v.amount;
-                    await supabase.from('profiles').update({ tokens: newTokens }).eq('id', user.id);
-                    await supabase.from('vouchers').update({ usage_count: v.usage_count + 1 }).eq('code', code);
-                    setProfile({ ...profile, tokens: newTokens });
-                    setVoucherCode('');
-                    alert(`Berjaya! +${v.amount} Token ditambah.`);
-                }
+                try {
+                    const { data: v, error } = await client.from('vouchers').select('*').eq('code', code).single();
+                    if (error || !v) {
+                        alert("Kod tidak sah!");
+                    } else if (v.usage_count >= v.max_usage) {
+                        alert("Kuota tamat!");
+                    } else {
+                        const newTokens = (profile.tokens || 0) + v.amount;
+                        await client.from('profiles').update({ tokens: newTokens }).eq('id', user.id);
+                        await client.from('vouchers').update({ usage_count: v.usage_count + 1 }).eq('code', code);
+                        setProfile(prev => ({ ...prev, tokens: newTokens }));
+                        setVoucherCode('');
+                        alert(`Berjaya! +${v.amount} Token ditambahkan.`);
+                    }
+                } catch (err) { alert("Ralat penebusan."); }
                 setLoading(false);
             };
 
+            // 6. Kendali Penjanaan AI (Call backend /api/gemini)
             const handleGenerate = async () => {
-                if (!supabase) return;
-                if (profile.tokens < 5) return alert("Token tidak cukup!");
+                if (!client) return;
+                if ((profile.tokens || 0) < 5) return alert("Kredit tidak cukup!");
                 if (!niche) return alert("Sila masukkan topik.");
+                
                 setLoading(true);
                 try {
                     const res = await fetch('/api/gemini', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                            prompt: `Tajuk buku menarik untuk: ${niche}`,
-                            system: "Penulis Profesional",
+                            prompt: `Buatkan tajuk buku premium tentang: ${niche}`,
+                            system: "Penulis Bestseller AI",
                             schema: { type: "OBJECT", properties: { title: { type: "STRING" } }, required: ["title"] }
                         })
                     });
                     const data = await res.json();
+                    if (data.error) throw new Error(data.error);
+
                     setPreviewContent(data.title);
-                    const nextTokens = profile.tokens - 5;
-                    await supabase.from('profiles').update({ tokens: nextTokens }).eq('id', user.id);
-                    setProfile({ ...profile, tokens: nextTokens });
-                } catch (e) { alert("AI Ralat."); }
+                    const nextT = (profile.tokens || 0) - 5;
+                    await client.from('profiles').update({ tokens: nextT }).eq('id', user.id);
+                    setProfile(prev => ({ ...prev, tokens: nextT }));
+                } catch (e) { 
+                    alert("Ralat AI: " + e.message); 
+                }
                 setLoading(false);
             };
 
-            // Paparan amaran jika kredensial belum diisi
-            if (!SUPABASE_URL || !SUPABASE_KEY) {
+            // Paparan Loading / Error Konfigurasi
+            if (!client) {
                 return (
-                    <div className="h-screen bg-red-600 flex items-center justify-center p-8 text-white text-center">
-                        <div className="max-w-md space-y-6">
-                            <i data-lucide="alert-triangle" class="w-20 h-20 mx-auto"></i>
-                            <h1 className="text-3xl font-black uppercase">Konfigurasi Diperlukan!</h1>
-                            <p className="font-medium opacity-90 leading-relaxed">
-                                Sila buka fail <b>index.html</b> dan masukkan <b>SUPABASE_URL</b> serta <b>SUPABASE_KEY</b> pada baris 26-27 sebelum menjalankan aplikasi.
-                            </p>
-                            <div className="bg-black/20 p-4 rounded-xl text-left font-mono text-xs border border-white/10">
-                                1. Login ke Supabase<br/>
-                                2. Klik Settings > API<br/>
-                                3. Salin Project URL & anon public key
-                            </div>
+                    <div className="h-screen flex items-center justify-center bg-slate-900 text-white">
+                        <div className="text-center space-y-4">
+                            <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                            <p className="font-bold uppercase tracking-widest text-xs">Menyambungkan ke Cloud...</p>
                         </div>
                     </div>
                 );
             }
 
+            // Layar Login
             if (!user) {
                 return (
-                    <div className="min-h-screen flex items-center justify-center p-4 bg-slate-900">
-                        <div className="bg-white rounded-[2.5rem] p-10 w-full max-w-md shadow-2xl text-center animate-fade-in">
-                            <div className="w-20 h-20 bg-emerald-600 rounded-3xl mx-auto flex items-center justify-center text-white text-4xl mb-6 shadow-lg transform -rotate-6">
+                    <div className="min-h-screen flex items-center justify-center p-6 bg-slate-900">
+                        <div className="bg-white rounded-[3rem] p-12 w-full max-w-md shadow-2xl text-center animate-fade-in">
+                            <div className="w-20 h-20 bg-emerald-600 rounded-3xl mx-auto flex items-center justify-center text-white text-4xl mb-8 shadow-xl transform -rotate-6">
                                 <i data-lucide="book-open"></i>
                             </div>
-                            <h1 className="text-3xl font-black text-slate-800 mb-2">Auto Book</h1>
-                            <p className="text-xs text-slate-400 mb-8 uppercase tracking-widest font-bold">Cloud Intelligence v2.0</p>
-                            <div className="space-y-4 text-left">
-                                <input type="email" placeholder="E-mel" className="w-full bg-slate-50 border-2 p-4 rounded-2xl outline-none focus:border-emerald-500" value={authEmail} onChange={e => setAuthEmail(e.target.value)} />
-                                <input type="password" placeholder="Kata Laluan" className="w-full bg-slate-50 border-2 p-4 rounded-2xl outline-none focus:border-emerald-500" value={authPassword} onChange={e => setAuthPassword(e.target.value)} />
-                                <button onClick={handleAuth} disabled={loading} className="w-full bg-emerald-600 text-white py-5 rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg active:scale-95 transition-all">
-                                    {loading ? 'Sila Tunggu...' : isRegistering ? 'Daftar Sekarang' : 'Masuk Dashboard'}
+                            <h1 className="text-3xl font-black text-slate-800 mb-2">Auto Book AI</h1>
+                            <p className="text-xs text-slate-400 mb-10 uppercase font-bold tracking-widest">Cloud Intelligence v2.0</p>
+                            <form onSubmit={handleAuth} className="space-y-4 text-left">
+                                <input type="email" placeholder="E-mel" className="w-full bg-slate-50 border-2 p-5 rounded-2xl outline-none focus:border-emerald-500 font-medium" value={authEmail} onChange={e => setAuthEmail(e.target.value)} required />
+                                <input type="password" placeholder="Kata Laluan" className="w-full bg-slate-50 border-2 p-5 rounded-2xl outline-none focus:border-emerald-500 font-medium" value={authPassword} onChange={e => setAuthPassword(e.target.value)} required />
+                                <button type="submit" disabled={authLoading} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-5 rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg active:scale-95 transition-all flex items-center justify-center">
+                                    {authLoading ? <i data-lucide="loader-2" className="animate-spin mr-2"></i> : null}
+                                    {isRegistering ? 'Daftar Akaun' : 'Masuk Dashboard'}
                                 </button>
-                                <p className="text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest cursor-pointer mt-4" onClick={() => setIsRegistering(!isRegistering)}>
-                                    {isRegistering ? 'Sudah ada akaun? Log Masuk' : 'Belum ada akaun? Daftar Sini'}
+                                <p className="text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest cursor-pointer mt-6 hover:text-emerald-600" onClick={() => setIsRegistering(!isRegistering)}>
+                                    {isRegistering ? 'Sudah ada akaun? Masuk' : 'Belum ada akaun? Daftar Sini'}
                                 </p>
-                            </div>
+                            </form>
                         </div>
                     </div>
                 );
             }
 
+            // Layar Utama
             return (
-                <div className="h-screen flex flex-col overflow-hidden">
+                <div className="h-screen flex flex-col overflow-hidden bg-slate-50">
                     <header className="bg-white border-b px-8 py-4 flex justify-between items-center shadow-sm z-50">
-                        <h1 className="font-black text-emerald-600 text-xl tracking-tighter flex items-center gap-2 uppercase">
-                             Auto Book <span className="bg-emerald-100 text-emerald-700 text-[10px] px-2 py-1 rounded-md">SUPABASE</span>
-                        </h1>
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center text-white shadow-lg">
+                                <i data-lucide="book-open" className="w-5 h-5"></i>
+                            </div>
+                            <h1 className="font-black text-slate-800 text-xl tracking-tighter uppercase">Auto Book <span className="text-emerald-600">Cloud</span></h1>
+                        </div>
                         <div className="flex items-center gap-8">
                             <div className="flex flex-col items-end">
-                                <span className="text-[9px] font-bold text-slate-300 uppercase tracking-widest">Kredit Tersedia</span>
+                                <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Kredit Tersedia</span>
                                 <div className="flex items-center gap-2 text-emerald-600 font-black">
-                                    <i data-lucide="gem" className="w-4 h-4"></i><span className="text-xl">{profile.tokens.toLocaleString()}</span>
+                                    <i data-lucide="gem" className="w-4 h-4"></i>
+                                    <span className="text-2xl tracking-tighter">{(profile.tokens || 0).toLocaleString()}</span>
                                 </div>
                             </div>
-                            <button onClick={() => supabase.auth.signOut()} className="text-slate-300 hover:text-red-500 transition-colors"><i data-lucide="log-out"></i></button>
+                            <button onClick={() => client.auth.signOut()} className="w-10 h-10 rounded-xl border flex items-center justify-center text-slate-300 hover:text-red-500 transition-all">
+                                <i data-lucide="log-out"></i>
+                            </button>
                         </div>
                     </header>
 
                     <main className="flex-grow flex overflow-hidden">
                         <div className="w-full lg:w-1/2 overflow-y-auto p-12 border-r bg-white space-y-12 custom-scrollbar">
-                            
-                            <div className="bg-slate-50 p-8 rounded-[2.5rem] border border-slate-100 space-y-4 shadow-inner">
-                                <h3 className="text-xs font-black text-slate-800 uppercase tracking-[0.2em] flex items-center gap-2">
+                            <div className="bg-slate-50 p-8 rounded-[2.5rem] border border-slate-100 space-y-5 shadow-inner">
+                                <h3 className="text-xs font-black text-slate-800 uppercase flex items-center gap-2">
                                     <i data-lucide="plus-circle" className="text-emerald-500 w-4 h-4"></i> Penebusan Baucar
                                 </h3>
                                 <div className="flex gap-2">
-                                    <input type="text" placeholder="Masukkan Kod Baucar" className="flex-grow bg-white border-2 border-white p-4 rounded-2xl outline-none focus:border-emerald-500 font-black uppercase text-xs" value={voucherCode} onChange={e => setVoucherCode(e.target.value)} />
-                                    <button onClick={handleRedeem} disabled={loading} className="bg-slate-800 text-white px-8 rounded-2xl font-black text-xs uppercase hover:bg-black transition-all">TEBUS</button>
+                                    <input type="text" placeholder="Kod Baucar" className="flex-grow bg-white border-2 p-5 rounded-2xl outline-none focus:border-emerald-500 font-black uppercase text-xs" value={voucherCode} onChange={e => setVoucherCode(e.target.value)} />
+                                    <button onClick={handleRedeem} disabled={loading} className="bg-slate-900 text-white px-8 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-black transition-all">TEBUS</button>
                                 </div>
                             </div>
 
-                            <div className="space-y-8 animate-fade-in">
-                                <h2 className="text-4xl font-black text-slate-800 tracking-tight leading-tight">Idea buku apa <br/>dalam fikiran anda?</h2>
-                                <textarea rows="4" className="w-full bg-slate-50 border-2 border-slate-100 p-8 rounded-[3rem] outline-none focus:border-emerald-500 transition-all font-medium text-lg shadow-inner" placeholder="Cth: Panduan diet sihat tanpa berlapar..." value={niche} onChange={e => setNiche(e.target.value)} />
-                                <button onClick={handleGenerate} disabled={loading} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white p-7 rounded-[2.5rem] font-black text-lg shadow-xl shadow-emerald-100 transition-all flex items-center justify-center gap-3 active:scale-95">
-                                    {loading ? <i className="animate-spin" data-lucide="loader-2"></i> : <i data-lucide="wand-sparkles"></i>} JANA KONSEP UTAMA
+                            <div className="space-y-8 animate-fade-in pt-4">
+                                <h2 className="text-4xl font-black text-slate-800 tracking-tight leading-tight uppercase">Apakah idea buku <br/>anda hari ini?</h2>
+                                <textarea rows="4" className="w-full bg-slate-50 border-2 p-8 rounded-[3rem] outline-none focus:border-emerald-500 transition-all font-medium text-lg shadow-inner" placeholder="Cth: Strategi pemasaran tanpa modal..." value={niche} onChange={e => setNiche(e.target.value)} />
+                                <button onClick={handleGenerate} disabled={loading} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white p-7 rounded-[2.5rem] font-black text-lg shadow-xl active:scale-95 transition-all flex items-center justify-center gap-3">
+                                    {loading ? <i data-lucide="loader-2" className="animate-spin mr-2"></i> : <i data-lucide="wand-sparkles" className="mr-2"></i>} JANA KONSEP UTAMA
                                 </button>
                             </div>
 
-                            <div className="pt-6 space-y-6">
+                            <div className="pt-10 space-y-6">
                                 <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-4">Upgrade Pakej Fleksibel</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 px-2">
                                     {packages.map(pkg => (
-                                        <div key={pkg.id} className="bg-white border-2 border-slate-50 p-8 rounded-[3rem] shadow-sm hover:border-emerald-400 transition-all group relative overflow-hidden">
+                                        <div key={pkg.id} className="bg-white border-2 border-slate-50 p-8 rounded-[3rem] shadow-sm hover:border-emerald-400 transition-all group relative overflow-hidden text-center">
                                             <i data-lucide="package" className="absolute top-4 right-4 text-emerald-50 w-8 h-8 group-hover:text-emerald-500 transition-colors"></i>
-                                            <h4 className="font-black text-slate-800 text-lg mb-1">{pkg.name}</h4>
-                                            <p className="text-2xl font-black text-emerald-600 mb-3">{pkg.price}</p>
-                                            <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mb-6">+{pkg.token_amount.toLocaleString()} Tokens</p>
-                                            <button onClick={() => alert("Sila WhatsApp Admin untuk pembelian pakej ini.")} className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-600 transition-all flex items-center justify-center gap-2">
-                                                Beli Sekarang <i data-lucide="chevron-right" className="w-4 h-4"></i>
+                                            <h4 className="font-black text-slate-800 text-lg mb-1 uppercase tracking-tight">{pkg.name}</h4>
+                                            <p className="text-2xl font-black text-emerald-600 mb-3 tracking-tighter">{pkg.price}</p>
+                                            <p className="text-slate-400 font-bold text-[10px] uppercase mb-8">+{pkg.token_amount.toLocaleString()} Tokens</p>
+                                            <button onClick={() => alert(`Sila WhatsApp Admin untuk beli ${pkg.name}.`)} className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black text-[10px] uppercase hover:bg-emerald-600 transition-all flex items-center justify-center gap-2 shadow-lg">
+                                                Beli Sekarang <i data-lucide="chevron-right"></i>
                                             </button>
                                         </div>
                                     ))}
@@ -247,18 +292,18 @@
                             </div>
                         </div>
 
-                        <div className="hidden lg:flex w-1/2 bg-slate-100 overflow-auto p-12 justify-center custom-scrollbar">
-                            <div className="bg-white w-[210mm] min-h-[297mm] p-24 shadow-2xl rounded-sm flex flex-col border border-slate-200">
+                        <div className="hidden lg:flex w-1/2 bg-slate-100 overflow-auto p-16 justify-center custom-scrollbar">
+                            <div className="bg-white w-[210mm] min-h-[297mm] p-24 shadow-2xl rounded-sm flex flex-col border border-slate-200 animate-fade-in relative text-center items-center justify-center">
                                 {previewContent ? (
-                                    <div className="animate-fade-in text-center">
+                                    <div className="animate-fade-in">
                                         <h1 className="text-5xl font-black text-emerald-950 uppercase leading-tight mb-12" style={{ fontFamily: 'Georgia, serif' }}>{previewContent}</h1>
                                         <div className="w-24 h-1.5 bg-emerald-500 mx-auto"></div>
-                                        <p className="mt-12 text-slate-400 font-bold uppercase tracking-[0.4em] text-[10px]">Artificial Intelligence Concept</p>
+                                        <p className="text-slate-400 font-black uppercase tracking-[0.5em] text-[10px] absolute bottom-12 left-0 right-0">Dihasilkan oleh Auto Book AI Intelligence</p>
                                     </div>
                                 ) : (
-                                    <div className="flex flex-col items-center justify-center h-full opacity-10">
-                                        <i data-lucide="book-open" className="w-32 h-32 mb-6 text-slate-400"></i>
-                                        <p className="font-black uppercase tracking-[0.8em] text-xs">Preview Area</p>
+                                    <div className="flex flex-col items-center justify-center opacity-10">
+                                        <i data-lucide="book-open" className="w-40 h-40 mb-8 text-slate-400"></i>
+                                        <p className="font-black uppercase tracking-[1em] text-xs">Ruang Pratonton</p>
                                     </div>
                                 )}
                             </div>
@@ -271,15 +316,7 @@
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
 
-        // Initialize Lucide Icons after render
-        const initIcons = () => {
-            if (window.lucide) {
-                lucide.createIcons();
-            } else {
-                setTimeout(initIcons, 100);
-            }
-        };
-        setTimeout(initIcons, 500);
+        setInterval(() => { if (window.lucide) window.lucide.createIcons(); }, 1500);
     </script>
 </body>
 </html>
