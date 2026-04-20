@@ -66,7 +66,8 @@
                     setUser(data?.session?.user ?? null);
                 });
 
-                const { data: { subscription } } = client.auth.onAuthStateChanged((_event, session) => {
+                // PERBAIKAN: Menggunakan onAuthStateChange (tanpa 'd' di akhir)
+                const { data: { subscription } } = client.auth.onAuthStateChange((_event, session) => {
                     setUser(session?.user ?? null);
                     if (!session) {
                         setProfile({ tokens: 0 });
