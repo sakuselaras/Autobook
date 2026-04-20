@@ -4,203 +4,282 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Auto Book Creator - Cloud Sync</title>
+    <!-- Framework & UI Library -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&display=swap');
-        body { font-family: 'Poppins', sans-serif; background-color: #f8fafc; color: #0f172a; }
-        .page-paper { background: white; width: 210mm; min-height: 297mm; margin: 0 auto; padding: 25.4mm; box-shadow: 0 10px 40px rgba(0,0,0,0.1); box-sizing: border-box; }
+        body { font-family: 'Poppins', sans-serif; background-color: #f8fafc; }
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #10b981; border-radius: 10px; }
         .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
-<body class="h-screen flex flex-col overflow-hidden bg-slate-50">
+<body>
+    <div id="root"></div>
 
-    <!-- PAPARAN LOG MASUK -->
-    <div id="auth-overlay" class="fixed inset-0 bg-slate-900/95 backdrop-blur-md z-[300] flex items-center justify-center p-4">
-        <div class="bg-white rounded-[2.5rem] p-10 w-full max-w-md shadow-2xl text-center border border-emerald-100">
-            <div class="w-20 h-20 bg-emerald-600 rounded-3xl mx-auto flex items-center justify-center text-white text-3xl mb-6 shadow-lg transform -rotate-6">
-                <i class="fas fa-book-open"></i>
-            </div>
-            <h1 class="text-2xl font-black text-slate-800 mb-2">Auto Book Creator</h1>
-            <p class="text-xs text-slate-500 mb-8 font-medium italic">Sila log masuk atau daftar untuk mula.</p>
-            
-            <div class="space-y-4 text-left">
-                <input type="email" id="auth-email" placeholder="E-mel" class="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 font-medium text-sm">
-                <input type="password" id="auth-password" placeholder="Kata Laluan (min. 6 aksara)" class="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl outline-none focus:ring-2 focus:ring-emerald-500 font-medium text-sm">
-                <div class="grid grid-cols-2 gap-4 pt-4">
-                    <button onclick="window.loginUser()" class="bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-2xl font-black transition-all shadow-md">LOG MASUK</button>
-                    <button onclick="window.registerUser()" class="bg-slate-800 hover:bg-slate-900 text-white py-4 rounded-2xl font-black transition-all shadow-md">DAFTAR</button>
-                </div>
-            </div>
-        </div>
-    </div>
+    <script type="text/babel">
+        const { useState, useEffect } = React;
 
-    <!-- HEADER -->
-    <header class="bg-white border-b px-8 py-4 flex justify-between items-center shadow-sm z-50">
-        <h1 class="font-black text-emerald-600 text-xl tracking-tighter">Auto Book <span class="bg-emerald-100 text-emerald-700 text-[10px] px-2 py-1 rounded-md ml-1 font-bold uppercase tracking-widest">Cloud v8.7</span></h1>
-        <div class="flex items-center gap-6">
-            <div class="flex flex-col items-end">
-                <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Baki Kredit</span>
-                <div class="flex items-center gap-2 text-emerald-600 font-black">
-                    <i class="fas fa-gem text-xs"></i><span id="credit-count" class="text-lg">0</span>
-                </div>
-            </div>
-            <button onclick="window.logoutUser()" class="text-slate-400 hover:text-red-500 font-bold text-xs transition-colors uppercase tracking-widest">Log Keluar <i class="fas fa-sign-out-alt ml-1"></i></button>
-        </div>
-    </header>
-
-    <!-- RUANG KERJA -->
-    <main class="flex-grow flex overflow-hidden">
-        <div class="w-full lg:w-1/2 overflow-y-auto p-12 border-r bg-white space-y-12 custom-scrollbar">
-            
-            <!-- SECTION: TOP UP -->
-            <div class="bg-slate-50 p-8 rounded-[2rem] border border-slate-100 space-y-4">
-                <h3 class="text-sm font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
-                    <i class="fas fa-plus-circle text-emerald-500"></i> Tambah Nilai Kredit
-                </h3>
-                <div class="flex gap-2">
-                    <input type="text" id="voucher-input" placeholder="Masukkan Kod Baucar" class="flex-grow border-2 border-white bg-white p-4 rounded-xl outline-none focus:border-emerald-500 font-black uppercase text-xs shadow-sm">
-                    <button onclick="window.redeemVoucher()" id="btn-redeem" class="bg-slate-800 text-white px-6 rounded-xl font-black text-[10px] uppercase hover:bg-black transition-all">Guna</button>
-                </div>
-            </div>
-
-            <!-- SECTION: GENERATOR -->
-            <div id="panel-1" class="space-y-8 animate-fade-in">
-                <h2 class="text-3xl font-black text-slate-800 tracking-tight leading-tight">Apakah topik buku <br>yang ingin anda bina?</h2>
-                <textarea id="in-niche" rows="5" class="w-full bg-slate-50 border-2 border-slate-100 p-6 rounded-[2rem] outline-none focus:border-emerald-500 transition-all font-medium text-base shadow-inner" placeholder="Contoh: Panduan sukses jualan online untuk pemula..."></textarea>
-                <button onclick="window.generateStep1()" id="btn-1" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white p-6 rounded-[2rem] font-black text-lg shadow-xl shadow-emerald-100 transition-all flex items-center justify-center gap-3">
-                    <i class="fas fa-wand-sparkles"></i> JANA KONSEP UTAMA
-                </button>
-                
-                <div id="res-1" class="hidden space-y-6 pt-10 border-t border-slate-100 animate-fade-in">
-                    <div class="space-y-2">
-                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Tajuk E-Book Hasil AI</label>
-                        <input type="text" id="edit-title" class="w-full border-2 border-slate-200 p-5 rounded-2xl font-bold text-slate-800 outline-none focus:border-emerald-500 shadow-sm transition-all">
-                    </div>
-                    <button onclick="window.lockStep(1, 2)" class="w-full bg-slate-800 hover:bg-black text-white p-6 rounded-2xl font-black shadow-lg transition-all flex items-center justify-center gap-3">
-                        SIMPAN & TERUSKAN <i class="fas fa-arrow-right"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <div class="hidden lg:flex w-1/2 bg-slate-100 overflow-auto p-12 justify-center custom-scrollbar">
-            <div id="master-preview" class="page-paper flex flex-col">
-                <div id="prev-content" class="text-slate-800 flex-grow">
-                    <div class="flex flex-col items-center justify-center h-full opacity-10 py-60">
-                        <i class="fas fa-book-open text-8xl mb-6"></i>
-                        <p class="font-black uppercase tracking-[0.5em] text-xs">Preview Area</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </main>
-
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // CONFIG FIREBASE ASLI (VERIFIED FROM image_5eb9a2.png)
-        const firebaseConfig = {
-            apiKey: "AIzaSyD02K_dydVWWwry3Q8BSP7JuP9WyEj0mE8",
-            authDomain: "autobook-creator.firebaseapp.com",
-            projectId: "autobook-creator",
-            storageBucket: "autobook-creator.firebasestorage.app",
-            messagingSenderId: "720531474052",
-            appId: "1:720531474052:web:63ef2e0fb0e14ef92f64d1",
-            measurementId: "G-VXFWLDCQZB"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const appId = 'autobook-creator-prod';
-
-        window.currentUser = null;
-        window.userCredits = 0;
-
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                window.currentUser = user;
-                document.getElementById('auth-overlay').classList.add('hidden');
-                onSnapshot(doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'data'), (snap) => {
-                    if (snap.exists()) {
-                        window.userCredits = snap.data().freeCredits || 0;
-                        document.getElementById('credit-count').innerText = window.userCredits.toLocaleString('ms-MY');
-                    }
-                });
-            } else {
-                window.currentUser = null;
-                document.getElementById('auth-overlay').classList.remove('hidden');
+        // --- KONFIGURASI SUPABASE ---
+        // Sila isi data di bawah dari Dashboard Supabase > Settings > API
+        const SUPABASE_URL = ""; 
+        const SUPABASE_KEY = "";
+        
+        // Inisialisasi selamat untuk mengelakkan ralat 'supabaseUrl is required'
+        let supabase = null;
+        if (SUPABASE_URL && SUPABASE_KEY) {
+            try {
+                supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            } catch (e) {
+                console.error("Gagal memulakan Supabase:", e);
             }
-        });
-
-        window.redeemVoucher = async () => {
-            const codeInput = document.getElementById('voucher-input');
-            const code = codeInput.value.trim().toUpperCase();
-            if(!code || !window.currentUser) return alert("Masukkan kod!");
-
-            try {
-                const vRef = doc(db, 'artifacts', appId, 'public', 'data', 'vouchers', code);
-                const vSnap = await getDoc(vRef);
-                if (vSnap.exists()) {
-                    const vData = vSnap.data();
-                    if ((vData.usageCount || 0) >= (vData.maxUsage || 1)) {
-                        alert("Baucar tamat tempoh.");
-                    } else {
-                        const totalBaru = window.userCredits + vData.amount;
-                        await updateDoc(doc(db, 'artifacts', appId, 'users', window.currentUser.uid, 'profile', 'data'), { freeCredits: totalBaru });
-                        await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', window.currentUser.uid), { email: window.currentUser.email, freeCredits: totalBaru }, { merge: true });
-                        await updateDoc(vRef, { usageCount: (vData.usageCount || 0) + 1 });
-                        alert(`Berjaya! Baki baru: ${totalBaru}`);
-                        codeInput.value = "";
-                    }
-                } else { alert("Kod tidak wujud."); }
-            } catch (e) { alert("Ralat sistem."); }
-        };
-
-        window.loginUser = async () => {
-            const email = document.getElementById('auth-email').value.trim();
-            const pwd = document.getElementById('auth-password').value.trim();
-            try { await signInWithEmailAndPassword(auth, email, pwd); } catch (err) { alert("Ralat Log Masuk: " + err.message); }
-        };
-
-        window.registerUser = async () => {
-            const email = document.getElementById('auth-email').value.trim();
-            const pwd = document.getElementById('auth-password').value.trim();
-            try {
-                const res = await createUserWithEmailAndPassword(auth, email, pwd);
-                const init = { email, freeCredits: 200, status: 'active', createdAt: new Date().toISOString() };
-                await setDoc(doc(db, 'artifacts', appId, 'users', res.user.uid, 'profile', 'data'), init);
-                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'users', res.user.uid), init);
-                alert("Berjaya Daftar! Percuma 200 kredit.");
-            } catch (err) { alert("Ralat Daftar: " + err.message); }
-        };
-
-        window.logoutUser = () => signOut(auth);
-
-        async function fetchAI(prompt, system, schema) {
-            const res = await fetch('/api/gemini', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt, system, schema }) });
-            return await res.json();
         }
 
-        window.generateStep1 = async () => {
-            if (window.userCredits < 5) return alert("Kredit tidak cukup.");
-            const niche = document.getElementById('in-niche').value;
-            if(!niche) return alert("Isi topik!");
-            const btn = document.getElementById('btn-1');
-            btn.disabled = true; btn.innerText = "...";
-            const res = await fetchAI(`Tajuk buku untuk ${niche}`, "Penulis Pro", { type: "OBJECT", properties: { title: { type: "STRING" } }, required: ["title"] });
-            document.getElementById('edit-title').value = res.title;
-            document.getElementById('res-1').classList.remove('hidden');
-            document.getElementById('prev-content').innerHTML = `<h1 style="text-align:center; padding-top:100px; font-weight:800; font-size:28pt;">${res.title}</h1>`;
-            await updateDoc(doc(db, 'artifacts', appId, 'users', window.currentUser.uid, 'profile', 'data'), { freeCredits: window.userCredits - 5 });
-            btn.disabled = false; btn.innerText = "JANA KONSEP UTAMA";
+        function App() {
+            const [user, setUser] = useState(null);
+            const [profile, setProfile] = useState({ tokens: 0 });
+            const [packages, setPackages] = useState([]);
+            const [niche, setNiche] = useState('');
+            const [voucherCode, setVoucherCode] = useState('');
+            const [loading, setLoading] = useState(false);
+            const [authEmail, setAuthEmail] = useState('');
+            const [authPassword, setAuthPassword] = useState('');
+            const [isRegistering, setIsRegistering] = useState(false);
+            const [previewContent, setPreviewContent] = useState(null);
+
+            // Inisialisasi Auth
+            useEffect(() => {
+                if (!supabase) return;
+                supabase.auth.getSession().then(({ data: { session } }) => {
+                    setUser(session?.user ?? null);
+                });
+                const { data: { subscription } } = supabase.auth.onAuthStateChanged((_event, session) => {
+                    setUser(session?.user ?? null);
+                });
+                return () => subscription.unsubscribe();
+            }, []);
+
+            // Muat Data Profil & Paket
+            useEffect(() => {
+                if (user && supabase) {
+                    fetchUserData();
+                }
+            }, [user]);
+
+            const fetchUserData = async () => {
+                if (!supabase) return;
+                // Ambil Profil
+                const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+                if (prof) setProfile(prof);
+
+                // Ambil Paket dari Admin
+                const { data: pkgs } = await supabase.from('packages').select('*').eq('is_active', true).order('token_amount', { ascending: true });
+                if (pkgs) setPackages(pkgs);
+            };
+
+            const handleAuth = async () => {
+                if (!supabase) return alert("Sila lengkapkan konfigurasi SUPABASE_URL dahulu.");
+                if (!authEmail || !authPassword) return alert("Sila isi e-mel dan kata laluan!");
+                setLoading(true);
+                try {
+                    if (isRegistering) {
+                        const { data, error } = await supabase.auth.signUp({ email: authEmail, password: authPassword });
+                        if (error) throw error;
+                        await supabase.from('profiles').insert([{ id: data.user.id, email: authEmail, tokens: 200 }]);
+                        alert("Daftar berjaya! Bonus 200 Token diberikan.");
+                    } else {
+                        const { error } = await supabase.auth.signInWithPassword({ email: authEmail, password: authPassword });
+                        if (error) throw error;
+                    }
+                } catch (err) { alert(err.message); }
+                setLoading(false);
+            };
+
+            const handleRedeem = async () => {
+                if (!supabase) return;
+                if (!voucherCode) return;
+                setLoading(true);
+                const code = voucherCode.trim().toUpperCase();
+                const { data: v } = await supabase.from('vouchers').select('*').eq('code', code).single();
+                
+                if (!v) {
+                    alert("Kod tidak sah!");
+                } else if (v.usage_count >= v.max_usage) {
+                    alert("Baucar sudah digunakan!");
+                } else {
+                    const newTokens = profile.tokens + v.amount;
+                    await supabase.from('profiles').update({ tokens: newTokens }).eq('id', user.id);
+                    await supabase.from('vouchers').update({ usage_count: v.usage_count + 1 }).eq('code', code);
+                    setProfile({ ...profile, tokens: newTokens });
+                    setVoucherCode('');
+                    alert(`Berjaya! +${v.amount} Token ditambah.`);
+                }
+                setLoading(false);
+            };
+
+            const handleGenerate = async () => {
+                if (!supabase) return;
+                if (profile.tokens < 5) return alert("Token tidak cukup!");
+                if (!niche) return alert("Sila masukkan topik.");
+                setLoading(true);
+                try {
+                    const res = await fetch('/api/gemini', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            prompt: `Tajuk buku menarik untuk: ${niche}`,
+                            system: "Penulis Profesional",
+                            schema: { type: "OBJECT", properties: { title: { type: "STRING" } }, required: ["title"] }
+                        })
+                    });
+                    const data = await res.json();
+                    setPreviewContent(data.title);
+                    const nextTokens = profile.tokens - 5;
+                    await supabase.from('profiles').update({ tokens: nextTokens }).eq('id', user.id);
+                    setProfile({ ...profile, tokens: nextTokens });
+                } catch (e) { alert("AI Ralat."); }
+                setLoading(false);
+            };
+
+            // Paparan amaran jika kredensial belum diisi
+            if (!SUPABASE_URL || !SUPABASE_KEY) {
+                return (
+                    <div className="h-screen bg-red-600 flex items-center justify-center p-8 text-white text-center">
+                        <div className="max-w-md space-y-6">
+                            <i data-lucide="alert-triangle" class="w-20 h-20 mx-auto"></i>
+                            <h1 className="text-3xl font-black uppercase">Konfigurasi Diperlukan!</h1>
+                            <p className="font-medium opacity-90 leading-relaxed">
+                                Sila buka fail <b>index.html</b> dan masukkan <b>SUPABASE_URL</b> serta <b>SUPABASE_KEY</b> pada baris 26-27 sebelum menjalankan aplikasi.
+                            </p>
+                            <div className="bg-black/20 p-4 rounded-xl text-left font-mono text-xs border border-white/10">
+                                1. Login ke Supabase<br/>
+                                2. Klik Settings > API<br/>
+                                3. Salin Project URL & anon public key
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            if (!user) {
+                return (
+                    <div className="min-h-screen flex items-center justify-center p-4 bg-slate-900">
+                        <div className="bg-white rounded-[2.5rem] p-10 w-full max-w-md shadow-2xl text-center animate-fade-in">
+                            <div className="w-20 h-20 bg-emerald-600 rounded-3xl mx-auto flex items-center justify-center text-white text-4xl mb-6 shadow-lg transform -rotate-6">
+                                <i data-lucide="book-open"></i>
+                            </div>
+                            <h1 className="text-3xl font-black text-slate-800 mb-2">Auto Book</h1>
+                            <p className="text-xs text-slate-400 mb-8 uppercase tracking-widest font-bold">Cloud Intelligence v2.0</p>
+                            <div className="space-y-4 text-left">
+                                <input type="email" placeholder="E-mel" className="w-full bg-slate-50 border-2 p-4 rounded-2xl outline-none focus:border-emerald-500" value={authEmail} onChange={e => setAuthEmail(e.target.value)} />
+                                <input type="password" placeholder="Kata Laluan" className="w-full bg-slate-50 border-2 p-4 rounded-2xl outline-none focus:border-emerald-500" value={authPassword} onChange={e => setAuthPassword(e.target.value)} />
+                                <button onClick={handleAuth} disabled={loading} className="w-full bg-emerald-600 text-white py-5 rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg active:scale-95 transition-all">
+                                    {loading ? 'Sila Tunggu...' : isRegistering ? 'Daftar Sekarang' : 'Masuk Dashboard'}
+                                </button>
+                                <p className="text-center text-[10px] font-bold text-slate-400 uppercase tracking-widest cursor-pointer mt-4" onClick={() => setIsRegistering(!isRegistering)}>
+                                    {isRegistering ? 'Sudah ada akaun? Log Masuk' : 'Belum ada akaun? Daftar Sini'}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
+
+            return (
+                <div className="h-screen flex flex-col overflow-hidden">
+                    <header className="bg-white border-b px-8 py-4 flex justify-between items-center shadow-sm z-50">
+                        <h1 className="font-black text-emerald-600 text-xl tracking-tighter flex items-center gap-2 uppercase">
+                             Auto Book <span className="bg-emerald-100 text-emerald-700 text-[10px] px-2 py-1 rounded-md">SUPABASE</span>
+                        </h1>
+                        <div className="flex items-center gap-8">
+                            <div className="flex flex-col items-end">
+                                <span className="text-[9px] font-bold text-slate-300 uppercase tracking-widest">Kredit Tersedia</span>
+                                <div className="flex items-center gap-2 text-emerald-600 font-black">
+                                    <i data-lucide="gem" className="w-4 h-4"></i><span className="text-xl">{profile.tokens.toLocaleString()}</span>
+                                </div>
+                            </div>
+                            <button onClick={() => supabase.auth.signOut()} className="text-slate-300 hover:text-red-500 transition-colors"><i data-lucide="log-out"></i></button>
+                        </div>
+                    </header>
+
+                    <main className="flex-grow flex overflow-hidden">
+                        <div className="w-full lg:w-1/2 overflow-y-auto p-12 border-r bg-white space-y-12 custom-scrollbar">
+                            
+                            <div className="bg-slate-50 p-8 rounded-[2.5rem] border border-slate-100 space-y-4 shadow-inner">
+                                <h3 className="text-xs font-black text-slate-800 uppercase tracking-[0.2em] flex items-center gap-2">
+                                    <i data-lucide="plus-circle" className="text-emerald-500 w-4 h-4"></i> Penebusan Baucar
+                                </h3>
+                                <div className="flex gap-2">
+                                    <input type="text" placeholder="Masukkan Kod Baucar" className="flex-grow bg-white border-2 border-white p-4 rounded-2xl outline-none focus:border-emerald-500 font-black uppercase text-xs" value={voucherCode} onChange={e => setVoucherCode(e.target.value)} />
+                                    <button onClick={handleRedeem} disabled={loading} className="bg-slate-800 text-white px-8 rounded-2xl font-black text-xs uppercase hover:bg-black transition-all">TEBUS</button>
+                                </div>
+                            </div>
+
+                            <div className="space-y-8 animate-fade-in">
+                                <h2 className="text-4xl font-black text-slate-800 tracking-tight leading-tight">Idea buku apa <br/>dalam fikiran anda?</h2>
+                                <textarea rows="4" className="w-full bg-slate-50 border-2 border-slate-100 p-8 rounded-[3rem] outline-none focus:border-emerald-500 transition-all font-medium text-lg shadow-inner" placeholder="Cth: Panduan diet sihat tanpa berlapar..." value={niche} onChange={e => setNiche(e.target.value)} />
+                                <button onClick={handleGenerate} disabled={loading} className="w-full bg-emerald-600 hover:bg-emerald-700 text-white p-7 rounded-[2.5rem] font-black text-lg shadow-xl shadow-emerald-100 transition-all flex items-center justify-center gap-3 active:scale-95">
+                                    {loading ? <i className="animate-spin" data-lucide="loader-2"></i> : <i data-lucide="wand-sparkles"></i>} JANA KONSEP UTAMA
+                                </button>
+                            </div>
+
+                            <div className="pt-6 space-y-6">
+                                <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] ml-4">Upgrade Pakej Fleksibel</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {packages.map(pkg => (
+                                        <div key={pkg.id} className="bg-white border-2 border-slate-50 p-8 rounded-[3rem] shadow-sm hover:border-emerald-400 transition-all group relative overflow-hidden">
+                                            <i data-lucide="package" className="absolute top-4 right-4 text-emerald-50 w-8 h-8 group-hover:text-emerald-500 transition-colors"></i>
+                                            <h4 className="font-black text-slate-800 text-lg mb-1">{pkg.name}</h4>
+                                            <p className="text-2xl font-black text-emerald-600 mb-3">{pkg.price}</p>
+                                            <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest mb-6">+{pkg.token_amount.toLocaleString()} Tokens</p>
+                                            <button onClick={() => alert("Sila WhatsApp Admin untuk pembelian pakej ini.")} className="w-full bg-slate-900 text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-600 transition-all flex items-center justify-center gap-2">
+                                                Beli Sekarang <i data-lucide="chevron-right" className="w-4 h-4"></i>
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="hidden lg:flex w-1/2 bg-slate-100 overflow-auto p-12 justify-center custom-scrollbar">
+                            <div className="bg-white w-[210mm] min-h-[297mm] p-24 shadow-2xl rounded-sm flex flex-col border border-slate-200">
+                                {previewContent ? (
+                                    <div className="animate-fade-in text-center">
+                                        <h1 className="text-5xl font-black text-emerald-950 uppercase leading-tight mb-12" style={{ fontFamily: 'Georgia, serif' }}>{previewContent}</h1>
+                                        <div className="w-24 h-1.5 bg-emerald-500 mx-auto"></div>
+                                        <p className="mt-12 text-slate-400 font-bold uppercase tracking-[0.4em] text-[10px]">Artificial Intelligence Concept</p>
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center h-full opacity-10">
+                                        <i data-lucide="book-open" className="w-32 h-32 mb-6 text-slate-400"></i>
+                                        <p className="font-black uppercase tracking-[0.8em] text-xs">Preview Area</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </main>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+
+        // Initialize Lucide Icons after render
+        const initIcons = () => {
+            if (window.lucide) {
+                lucide.createIcons();
+            } else {
+                setTimeout(initIcons, 100);
+            }
         };
+        setTimeout(initIcons, 500);
     </script>
 </body>
 </html>
