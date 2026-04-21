@@ -21,8 +21,8 @@ export default async function handler(req, res) {
     };
 
     try {
-        // Menggunakan model gemini-1.5-flash (Versi paling cepat, stabil, dan gratis)
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+        // SOLUSI PASTI: Menggunakan model "gemini-pro" yang didukung penuh di semua server
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
@@ -30,7 +30,7 @@ export default async function handler(req, res) {
 
         const data = await response.json();
         
-        // Menangkap error jika Region Vercel diblokir oleh Google
+        // Menangkap error jika ada kendala
         if (data.error) {
             return res.status(400).json({ error: data.error.message });
         }
