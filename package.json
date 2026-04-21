@@ -1,17 +1,16 @@
 {
-  "name": "auto-book-generation",
+  "name": "autobook-pro",
   "version": "1.0.0",
-  "description": "AI content generator with Gemini",
-  "main": "index.js",
+  "description": "Auto Book Creator Pro for Render.com",
+  "main": "server.js",
   "scripts": {
-    "start": "node api/generate.js"
+    "start": "node server.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
-    "cors": "^2.8.6",
-    "dotenv": "^17.4.2",
-    "express": "^5.2.1"
+    "express": "^4.18.2",
+    "cors": "^2.8.5"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }
