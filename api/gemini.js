@@ -1,13 +1,16 @@
 export default async function handler(req, res) {
+    // 1. Vercel mewajibkan file ini ada di dalam folder /api/
     if (req.method !== 'POST') {
-        return res.status(405).json({ error: 'Hanya menerima method POST' });
+        return res.status(405).json({ error: 'Hanya menerima metode POST' });
     }
 
     const { prompt, system, schema } = req.body;
+    
+    // 2. Mengambil API Key dari Environment Variables Vercel
     const apiKey = process.env.GEMINI_API_KEY; 
 
     if (!apiKey) {
-        return res.status(500).json({ error: 'API Key belum disetting di Vercel.' });
+        return res.status(500).json({ error: 'API Key belum diatur di dashboard Vercel.' });
     }
 
     const payload = { 
@@ -21,7 +24,8 @@ export default async function handler(req, res) {
     };
 
     try {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+        // PERBAIKAN: Menggunakan model 'gemini-1.5-flash' yang paling stabil, cepat, dan resmi didukung Google
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
