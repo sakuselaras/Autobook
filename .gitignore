@@ -1,17 +1,16 @@
-# Node modules
-node_modules/
-
-# Environment variables (WAJIB)
-.env
-
-# Logs
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# OS files
-.DS_Store
-Thumbs.db
-
-# Vercel
-.vercel
+{
+  "name": "autobook-pro",
+  "version": "1.0.0",
+  "description": "Auto Book Creator Pro for Render.com",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
