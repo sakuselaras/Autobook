@@ -13,7 +13,7 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: 'API Key belum diatur di dashboard Vercel.' });
     }
 
-    // 3. Menyederhanakan prompt agar didukung oleh semua versi Gemini gratis
+    // 3. Menyederhanakan prompt agar didukung oleh semua versi Gemini
     const combinedPrompt = `Peran Anda: ${system}\n\nPENTING: Balas HANYA dengan format JSON yang valid berisi properti "title". Jangan tambahkan teks lain. Contoh balasan: {"title": "Judul Buku yang Menarik"}\n\nTopik buku: ${prompt}`;
 
     const payload = { 
@@ -21,8 +21,8 @@ export default async function handler(req, res) {
     };
 
     try {
-        // SOLUSI PASTI: Menggunakan model "gemini-pro" yang didukung penuh di semua server
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
+        // SOLUSI FINAL: Menggunakan jalur resmi "v1" (bukan v1beta) dan model standar gemini-1.5-flash
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
@@ -30,7 +30,7 @@ export default async function handler(req, res) {
 
         const data = await response.json();
         
-        // Menangkap error jika ada kendala
+        // Menangkap error jika ada kendala dari Google
         if (data.error) {
             return res.status(400).json({ error: data.error.message });
         }
@@ -40,6 +40,6 @@ export default async function handler(req, res) {
         res.status(200).json(JSON.parse(resultText));
 
     } catch (error) {
-        res.status(500).json({ error: 'Gagal menghubungi server Google Gemini. Cek pengaturan Region Vercel Anda.' });
+        res.status(500).json({ error: 'Gagal menghubungi server Google Gemini. Pastikan API Key valid.' });
     }
 }
