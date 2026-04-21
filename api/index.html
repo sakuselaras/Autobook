@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Auto Book Creator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
+        body { font-family: 'Poppins', sans-serif; background-color: #f8fafc; color: #0f172a; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    </style>
+</head>
+<body class="h-screen flex overflow-hidden bg-slate-50">
+
+    <!-- SIDEBAR -->
+    <aside class="w-64 bg-slate-900 text-white flex flex-col hidden md:flex shrink-0">
+        <div class="p-6 border-b border-slate-800">
+            <h1 class="text-xl font-black text-emerald-400 tracking-tight">E-book Admin<span class="text-white">Pro</span></h1>
+            <p class="text-[10px] text-slate-400 uppercase tracking-widest mt-1">Management System</p>
+        </div>
+        <nav class="flex-grow p-4 space-y-2">
+            <button id="nav-user" onclick="switchView('user')" class="bg-blue-600 text-white px-4 py-3 rounded-xl font-bold text-sm shadow-md flex items-center gap-3 w-full text-left transition-colors">
+                <i class="fas fa-users w-5"></i> Kelola Pengguna
+            </button>
+            <button id="nav-voucher" onclick="switchView('voucher')" class="text-slate-400 hover:text-white hover:bg-slate-800 px-4 py-3 rounded-xl font-medium text-sm transition-colors flex items-center gap-3 w-full text-left">
+                <i class="fas fa-ticket-alt w-5"></i> Kelola Voucher
+            </button>
+            <button id="nav-calc" onclick="switchView('calc')" class="text-slate-400 hover:text-white hover:bg-slate-800 px-4 py-3 rounded-xl font-medium text-sm transition-colors flex items-center gap-3 w-full text-left">
+                <i class="fas fa-calculator w-5"></i> Kalkulator Kuota
+            </button>
+            
+            <button onclick="window.open('index.html', '_blank')" class="text-slate-400 hover:text-white hover:bg-slate-800 px-4 py-3 rounded-xl font-medium text-sm transition-colors flex items-center gap-3 w-full text-left mt-4 border-t border-slate-800 pt-4 cursor-pointer">
+                <i class="fas fa-external-link-alt w-5"></i> Buka Aplikasi Web
+            </button>
+        </nav>
+        <div class="p-4 border-t border-slate-800">
+            <div class="flex items-center gap-3 text-sm">
+                <div class="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center font-bold">A</div>
+                <div>
+                    <p class="font-bold leading-tight">Admin Master</p>
+                    <p class="text-xs text-slate-400">Online</p>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="flex-grow flex flex-col h-full overflow-hidden relative">
+        
+        <!-- HEADER -->
+        <header class="bg-white border-b border-slate-200 px-8 py-5 flex justify-between items-center shrink-0">
+            <div>
+                <h2 id="header-title" class="text-2xl font-black text-slate-800">Database Pengguna</h2>
+                <p id="header-desc" class="text-sm text-slate-500 font-medium">Kelola akun pendaftar, edit token, dan blokir (banned) pengguna.</p>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="copyToClipboard()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 border border-slate-200">
+                    <i class="fas fa-copy"></i> Copy Script DB
+                </button>
+                <button onclick="exportDatabaseJS()" class="bg-slate-800 hover:bg-black text-white px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition shadow-md flex items-center gap-2">
+                    <i class="fas fa-cloud-download-alt"></i> Simpan database.js
+                </button>
+            </div>
+        </header>
+
+        <!-- AREA KERJA -->
+        <div class="flex-grow overflow-y-auto custom-scrollbar bg-slate-50">
+            
+            <!-- ============================================== -->
+            <!-- VIEW: KELOLA PENGGUNA (USERS)                  -->
+            <!-- ============================================== -->
+            <div id="user-view" class="p-8">
+                <!-- STATISTIK KILAT PENGGUNA -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xl"><i class="fas fa-users"></i></div>
+                        <div>
+                            <p class="text-xs text-slate-500 font-bold uppercase tracking-wider">Total Pendaftar</p>
+                            <h3 class="text-2xl font-black text-slate-800" id="stat-total-user">0</h3>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xl"><i class="fas fa-user-check"></i></div>
+                        <div>
+                            <p class="text-xs text-slate-500 font-bold uppercase tracking-wider">Akun Aktif</p>
+                            <h3 class="text-2xl font-black text-slate-800" id="stat-active-user">0</h3>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl border border-red-200 shadow-sm flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center text-xl"><i class="fas fa-user-slash"></i></div>
+                        <div>
+                            <p class="text-xs text-slate-500 font-bold uppercase tracking-wider">Akun Banned</p>
+                            <h3 class="text-2xl font-black text-red-600" id="stat-banned-user">0</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AREA KONTROL PENGGUNA -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- FORM TAMBAH PENGGUNA -->
+                    <div class="lg:col-span-1 space-y-6">
+                        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                            <h3 class="text-lg font-black text-slate-800 border-b border-slate-100 pb-3 mb-4"><i class="fas fa-user-plus text-blue-500 mr-2"></i> Daftarkan Pengguna</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Nama Lengkap</label>
+                                    <input type="text" id="in-user-name" placeholder="Misal: Budi Santoso" class="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Email / ID Unik</label>
+                                    <input type="text" id="in-user-email" placeholder="budi@email.com" class="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 font-bold lowercase transition text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Token Awal</label>
+                                    <input type="number" id="in-user-token" placeholder="0" class="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-4 py-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 font-bold transition text-sm">
+                                </div>
+                                <button onclick="addUser()" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-bold text-sm transition-colors shadow-md mt-2 flex items-center justify-center gap-2">
+                                    Simpan Pengguna Baru <i class="fas fa-save"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TABEL DAFTAR PENGGUNA -->
+                    <div class="lg:col-span-2">
+                        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-full min-h-[400px]">
+                            <div class="p-5 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+                                <h3 class="text-lg font-black text-slate-800"><i class="fas fa-address-book text-blue-500 mr-2"></i> Database Member Aktif</h3>
+                            </div>
+                            
+                            <div class="overflow-x-auto flex-grow p-5 custom-scrollbar">
+                                <table class="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr>
+                                            <th class="pb-3 pt-2 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b-2 border-slate-100">Nama / Email</th>
+                                            <th class="pb-3 pt-2 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b-2 border-slate-100 text-center">Sisa Token</th>
+                                            <th class="pb-3 pt-2 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b-2 border-slate-100 text-center">Status</th>
+                                            <th class="pb-3 pt-2 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b-2 border-slate-100 text-center">Aksi Banned / Hapus</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="user-table-body" class="text-sm">
+                                        <!-- Data User Render Here -->
+                                    </tbody>
+                                </table>
+                                <div id="empty-state-user" class="hidden flex flex-col items-center justify-center py-12 text-slate-400">
+                                    <i class="fas fa-users-slash text-4xl mb-3 opacity-50"></i>
+                                    <p class="text-sm font-medium">Belum ada pengguna terdaftar.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================================== -->
+            <!-- VIEW: KELOLA VOUCHER                           -->
+            <!-- ============================================== -->
+            <div id="voucher-view" class="p-8 hidden">
+                <!-- STATISTIK KILAT VOUCHER -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xl"><i class="fas fa-tags"></i></div>
+                        <div>
+                            <p class="text-xs text-slate-500 font-bold uppercase tracking-wider">Total Voucher Aktif</p>
+                            <h3 class="text-2xl font-black text-slate-800" id="stat-total-voucher">0</h3>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center text-xl"><i class="fas fa-coins"></i></div>
+                        <div>
+                            <p class="text-xs text-slate-500 font-bold uppercase tracking-wider">Total Nilai Token</p>
+                            <h3 class="text-2xl font-black text-slate-800" id="stat-total-token">0</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AREA KONTROL VOUCHER -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- FORM TAMBAH VOUCHER -->
+                    <div class="lg:col-span-1 space-y-6">
+                        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                            <h3 class="text-lg font-black text-slate-800 border-b border-slate-100 pb-3 mb-4"><i class="fas fa-plus-circle text-emerald-500 mr-2"></i> Buat Voucher Baru</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Kode Voucher (Unik)</label>
+                                    <input type="text" id="in-code" placeholder="Misal: DISKON50" class="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-4 py-3 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 font-bold uppercase transition text-sm">
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Jumlah Token Didapat</label>
+                                    <input type="number" id="in-amount" placeholder="Misal: 50" class="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-4 py-3 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 font-bold transition text-sm">
+                                </div>
+                                <button onclick="addVoucher()" class="w-full bg-slate-800 hover:bg-slate-900 text-white py-3 rounded-xl font-bold text-sm transition-colors shadow-md mt-2 flex items-center justify-center gap-2">
+                                    Tambahkan ke Daftar <i class="fas fa-arrow-right"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TABEL DAFTAR VOUCHER -->
+                    <div class="lg:col-span-2">
+                        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-full min-h-[400px]">
+                            <div class="p-5 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
+                                <h3 class="text-lg font-black text-slate-800"><i class="fas fa-list text-emerald-500 mr-2"></i> Daftar Kode Voucher Aktif</h3>
+                            </div>
+                            
+                            <div class="overflow-x-auto flex-grow p-5 custom-scrollbar">
+                                <table class="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr>
+                                            <th class="pb-3 pt-2 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b-2 border-slate-100">Kode Promo</th>
+                                            <th class="pb-3 pt-2 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b-2 border-slate-100 text-right">Nilai Token</th>
+                                            <th class="pb-3 pt-2 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b-2 border-slate-100 text-center w-24">Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="voucher-table-body" class="text-sm">
+                                        <!-- Data Voucher Render Here -->
+                                    </tbody>
+                                </table>
+                                <div id="empty-state-voucher" class="hidden flex flex-col items-center justify-center py-12 text-slate-400">
+                                    <i class="fas fa-folder-open text-4xl mb-3 opacity-50"></i>
+                                    <p class="text-sm font-medium">Belum ada voucher. Silakan buat baru.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ============================================== -->
+            <!-- VIEW: KALKULATOR KUOTA & PROYEKSI              -->
+            <!-- ============================================== -->
+            <div id="calc-view" class="p-8 hidden">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    
+                    <!-- INPUT PARAMETER -->
+                    <div class="lg:col-span-1 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-5 h-max">
+                        <h3 class="text-lg font-black text-slate-800 border-b border-slate-100 pb-3"><i class="fas fa-sliders-h text-amber-500 mr-2"></i> Parameter Simulasi</h3>
+                        
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Target Pendaftar Baru / Bulan</label>
+                            <input type="number" id="calc-users" value="100" oninput="calculateProjection()" class="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-4 py-3 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200 font-bold transition text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Rata-rata Token/User <br><span class="text-[9px] opacity-70 font-medium capitalize">(1 Buku Full = ~10 Token)</span></label>
+                            <input type="number" id="calc-tokens" value="10" oninput="calculateProjection()" class="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-4 py-3 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200 font-bold transition text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Batas Kuota / Budget Token API</label>
+                            <input type="number" id="calc-quota" value="5000" oninput="calculateProjection()" class="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-xl px-4 py-3 outline-none focus:border-amber-500 focus:ring-2 focus:ring-amber-200 font-bold transition text-sm">
+                        </div>
+                    </div>
+
+                    <!-- HASIL KALKULASI -->
+                    <div class="lg:col-span-2 flex flex-col gap-6">
+                        
+                        <!-- Status Banner -->
+                        <div id="calc-status-banner" class="p-5 rounded-2xl border flex items-start gap-4 bg-emerald-50 border-emerald-200 text-emerald-800 transition-colors duration-300">
+                            <div id="calc-status-icon"><i class="fas fa-shield-check text-2xl text-emerald-500"></i></div>
+                            <div>
+                                <h4 id="calc-status-title" class="font-black text-lg">Status Aman & Terkendali</h4>
+                                <p id="calc-status-desc" class="text-sm mt-1 opacity-90">Penggunaan token bulanan masih jauh di bawah batas kuota Anda. Anda siap menerima lebih banyak pendaftar!</p>
+                            </div>
+                        </div>
+
+                        <!-- Kotak Proyeksi -->
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm text-center">
+                                <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Pemakaian 1 Bulan</p>
+                                <h3 class="text-2xl font-black text-blue-600"><span id="res-1-month">1.000</span> <i class="fas fa-coins text-sm text-blue-300"></i></h3>
+                            </div>
+                            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm text-center">
+                                <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Proyeksi 6 Bulan</p>
+                                <h3 class="text-2xl font-black text-purple-600"><span id="res-6-month">6.000</span> <i class="fas fa-coins text-sm text-purple-300"></i></h3>
+                            </div>
+                            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm text-center">
+                                <p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Proyeksi 1 Tahun</p>
+                                <h3 class="text-2xl font-black text-indigo-600"><span id="res-12-month">12.000</span> <i class="fas fa-coins text-sm text-indigo-300"></i></h3>
+                            </div>
+                        </div>
+
+                        <!-- Tips Box -->
+                        <div class="bg-slate-900 text-slate-300 p-6 rounded-2xl text-sm leading-relaxed shadow-inner">
+                            <p><strong class="text-white"><i class="fas fa-lightbulb text-amber-400"></i> Tips Mencegah Tagihan API Boncos:</strong></p>
+                            <ul class="list-disc pl-4 mt-2 space-y-1 text-xs">
+                                <li>1 proses generate buku lengkap (dari awal sampai Penutup & Bonus) umumnya memakan <strong>sekitar 10 Token</strong>.</li>
+                                <li>Atur Saldo Token Awal secara bijak saat membuatkan akun baru untuk Pendaftar.</li>
+                                <li>Jika indikator status berwarna <strong>MERAH (AWAS BONCOS)</strong>, segera kurangi jatah token gratis atau naikkan paket budget API Anda!</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- TOAST NOTIFIKASI -->
+    <div id="toast" class="fixed bottom-8 right-8 bg-slate-800 text-white px-6 py-4 rounded-xl text-sm font-bold shadow-2xl flex items-center gap-3 transition-all opacity-0 translate-y-10 pointer-events-none z-[100]">
+        <i class="fas fa-check-circle text-emerald-400 text-lg"></i> <span id="toast-msg">Notifikasi</span>
+    </div>
+
+    <!-- SCRIPT LOGIKA ADMIN -->
+    <script>
+        // ==========================================
+        // 1. DATABASE SEMENTARA (State Management)
+        // ==========================================
+        let voucherDatabase = {
+            'BASIC200': 200,
+            'PREMIUM1000': 1000,
+            'HEMAT25': 25000,
+            'PRO100': 100000,
+            'VIPADMIN': 500000
+        };
+
+        let userDatabase = {
+            'budi@gmail.com': { name: 'Budi Santoso', tokens: 1500, status: 'active' },
+            'admin@abc.com': { name: 'Admin Master', tokens: 99999, status: 'active' },
+            'spammer@bot.com': { name: 'Spammer Nakal', tokens: 0, status: 'banned' }
+        };
+
+        // ==========================================
+        // 2. FUNGSI UI & NAVIGASI
+        // ==========================================
+        function showToast(msg, isError = false) {
+            const t = document.getElementById('toast');
+            const m = document.getElementById('toast-msg');
+            m.innerText = msg;
+            t.className = `fixed bottom-8 right-8 ${isError ? 'bg-red-600' : 'bg-slate-800'} text-white px-6 py-4 rounded-xl text-sm font-bold shadow-2xl flex items-center gap-3 transition-all opacity-100 translate-y-0 z-[100]`;
+            setTimeout(() => { t.style.opacity = '0'; t.style.transform = 'translateY(10px)'; }, 3000);
+        }
+
+        function switchView(viewName) {
+            // Reset Button Styles
+            document.getElementById('nav-user').className = 'text-slate-400 hover:text-white hover:bg-slate-800 px-4 py-3 rounded-xl font-medium text-sm transition-colors flex items-center gap-3 w-full text-left';
+            document.getElementById('nav-voucher').className = 'text-slate-400 hover:text-white hover:bg-slate-800 px-4 py-3 rounded-xl font-medium text-sm transition-colors flex items-center gap-3 w-full text-left';
+            document.getElementById('nav-calc').className = 'text-slate-400 hover:text-white hover:bg-slate-800 px-4 py-3 rounded-xl font-medium text-sm transition-colors flex items-center gap-3 w-full text-left';
+            
+            // Hide all views
+            document.getElementById('user-view').classList.add('hidden');
+            document.getElementById('voucher-view').classList.add('hidden');
+            document.getElementById('calc-view').classList.add('hidden');
+
+            if (viewName === 'user') {
+                document.getElementById('nav-user').className = 'bg-blue-600 text-white px-4 py-3 rounded-xl font-bold text-sm shadow-md flex items-center gap-3 w-full text-left transition-colors';
+                document.getElementById('user-view').classList.remove('hidden');
+                document.getElementById('header-title').innerText = 'Database Pengguna';
+                document.getElementById('header-desc').innerText = 'Kelola akun pendaftar, edit token, dan blokir (banned) pengguna.';
+                renderUserTable();
+            } else if (viewName === 'voucher') {
+                document.getElementById('nav-voucher').className = 'bg-emerald-600 text-white px-4 py-3 rounded-xl font-bold text-sm shadow-md flex items-center gap-3 w-full text-left transition-colors';
+                document.getElementById('voucher-view').classList.remove('hidden');
+                document.getElementById('header-title').innerText = 'Database Voucher';
+                document.getElementById('header-desc').innerText = 'Tambah, hapus, dan atur kode promo diskon.';
+                renderVoucherTable();
+            } else if (viewName === 'calc') {
+                document.getElementById('nav-calc').className = 'bg-amber-500 text-white px-4 py-3 rounded-xl font-bold text-sm shadow-md flex items-center gap-3 w-full text-left transition-colors';
+                document.getElementById('calc-view').classList.remove('hidden');
+                document.getElementById('header-title').innerText = 'Kalkulator Kuota API';
+                document.getElementById('header-desc').innerText = 'Simulasi proyeksi penggunaan token agar budget API tetap aman (Tidak Boncos).';
+                calculateProjection();
+            }
+        }
+
+        // ==========================================
+        // 3. KALKULATOR LOGIC
+        // ==========================================
+        function calculateProjection() {
+            const users = parseInt(document.getElementById('calc-users').value) || 0;
+            const tokensPerUser = parseInt(document.getElementById('calc-tokens').value) || 0;
+            const monthlyQuota = parseInt(document.getElementById('calc-quota').value) || 0;
+
+            const monthlyUsage = users * tokensPerUser;
+            const sixMonthUsage = monthlyUsage * 6;
+            const yearlyUsage = monthlyUsage * 12;
+
+            document.getElementById('res-1-month').innerText = monthlyUsage.toLocaleString('id-ID');
+            document.getElementById('res-6-month').innerText = sixMonthUsage.toLocaleString('id-ID');
+            document.getElementById('res-12-month').innerText = yearlyUsage.toLocaleString('id-ID');
+
+            const statusBanner = document.getElementById('calc-status-banner');
+            const statusIcon = document.getElementById('calc-status-icon');
+            const statusTitle = document.getElementById('calc-status-title');
+            const statusDesc = document.getElementById('calc-status-desc');
+
+            if (monthlyQuota === 0) {
+                statusBanner.className = "p-5 rounded-2xl border flex items-start gap-4 bg-slate-50 border-slate-200 text-slate-500 transition-colors duration-300";
+                statusIcon.innerHTML = '<i class="fas fa-info-circle text-2xl"></i>';
+                statusTitle.innerText = "Masukkan Batas Kuota";
+                statusDesc.innerText = "Tentukan kuota API bulanan Anda untuk melihat status keamanan.";
+            } else if (monthlyUsage > monthlyQuota) {
+                statusBanner.className = "p-5 rounded-2xl border flex items-start gap-4 bg-red-50 border-red-200 text-red-800 transition-colors duration-300";
+                statusIcon.innerHTML = '<i class="fas fa-exclamation-triangle text-2xl text-red-500"></i>';
+                statusTitle.innerText = "AWAS BONCOS!";
+                statusDesc.innerText = `Penggunaan bulanan (${monthlyUsage.toLocaleString('id-ID')} Token) melebihi kuota yang Anda miliki (${monthlyQuota.toLocaleString('id-ID')} Token).`;
+            } else if (monthlyUsage > (monthlyQuota * 0.8)) {
+                statusBanner.className = "p-5 rounded-2xl border flex items-start gap-4 bg-amber-50 border-amber-200 text-amber-800 transition-colors duration-300";
+                statusIcon.innerHTML = '<i class="fas fa-exclamation-circle text-2xl text-amber-500"></i>';
+                statusTitle.innerText = "Peringatan Kuota (Hampir Penuh)";
+                statusDesc.innerText = `Penggunaan mencapai ${((monthlyUsage/monthlyQuota)*100).toFixed(1)}% dari kuota bulanan. Harap pantau ketat pendaftar Anda.`;
+            } else {
+                statusBanner.className = "p-5 rounded-2xl border flex items-start gap-4 bg-emerald-50 border-emerald-200 text-emerald-800 transition-colors duration-300";
+                statusIcon.innerHTML = '<i class="fas fa-shield-check text-2xl text-emerald-500"></i>';
+                statusTitle.innerText = "Status Aman & Terkendali";
+                statusDesc.innerText = `Penggunaan token bulanan masih jauh di bawah batas kuota Anda. Anda siap menerima lebih banyak pendaftar!`;
+            }
+        }
+
+        // ==========================================
+        // 4. MANAJEMEN VOUCHER
+        // ==========================================
+        function renderVoucherTable() {
+            const tbody = document.getElementById('voucher-table-body');
+            const emptyState = document.getElementById('empty-state-voucher');
+            tbody.innerHTML = '';
+            
+            const keys = Object.keys(voucherDatabase);
+            if (keys.length === 0) {
+                emptyState.classList.remove('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+                let totalToken = 0;
+                keys.forEach((code) => {
+                    const amount = voucherDatabase[code];
+                    totalToken += amount;
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-slate-50 transition-colors group border-b border-slate-100 last:border-0";
+                    tr.innerHTML = `
+                        <td class="py-4 font-black text-slate-800 tracking-wide">${code}</td>
+                        <td class="py-4 font-bold text-emerald-600 text-right">+ ${amount.toLocaleString('id-ID')}</td>
+                        <td class="py-4 text-center">
+                            <button onclick="deleteVoucher('${code}')" class="text-slate-400 hover:text-red-500 bg-white hover:bg-red-50 w-8 h-8 rounded-lg shadow-sm border border-slate-200 transition-colors" title="Hapus">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+                document.getElementById('stat-total-voucher').innerText = keys.length;
+                document.getElementById('stat-total-token').innerText = totalToken.toLocaleString('id-ID');
+            }
+        }
+
+        function addVoucher() {
+            const codeInput = document.getElementById('in-code');
+            const amountInput = document.getElementById('in-amount');
+            const code = codeInput.value.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+            const amount = parseInt(amountInput.value);
+
+            if (!code) return showToast("Kode voucher tidak boleh kosong!", true);
+            if (!amount || amount <= 0) return showToast("Jumlah token harus lebih dari 0!", true);
+            if (voucherDatabase.hasOwnProperty(code)) return showToast("Kode voucher sudah ada!", true);
+
+            voucherDatabase[code] = amount;
+            codeInput.value = ''; amountInput.value = '';
+            renderVoucherTable();
+            showToast(`Voucher ${code} berhasil ditambahkan!`);
+        }
+
+        function deleteVoucher(code) {
+            if (confirm(`Yakin ingin menghapus voucher '${code}'?`)) {
+                delete voucherDatabase[code];
+                renderVoucherTable();
+                showToast(`Voucher ${code} dihapus.`, true);
+            }
+        }
+
+        // ==========================================
+        // 5. MANAJEMEN PENGGUNA (USERS)
+        // ==========================================
+        function renderUserTable() {
+            const tbody = document.getElementById('user-table-body');
+            const emptyState = document.getElementById('empty-state-user');
+            tbody.innerHTML = '';
+            
+            const emails = Object.keys(userDatabase);
+            if (emails.length === 0) {
+                emptyState.classList.remove('hidden');
+                document.getElementById('stat-total-user').innerText = '0';
+                document.getElementById('stat-active-user').innerText = '0';
+                document.getElementById('stat-banned-user').innerText = '0';
+            } else {
+                emptyState.classList.add('hidden');
+                let activeCount = 0; let bannedCount = 0;
+
+                emails.forEach((email) => {
+                    const user = userDatabase[email];
+                    if(user.status === 'active') activeCount++; else bannedCount++;
+
+                    const isBanned = user.status === 'banned';
+                    const badgeClass = isBanned ? 'bg-red-100 text-red-600 border-red-200' : 'bg-emerald-100 text-emerald-600 border-emerald-200';
+                    const badgeIcon = isBanned ? '<i class="fas fa-ban mr-1"></i> Banned' : '<i class="fas fa-check-circle mr-1"></i> Aktif';
+                    const nameColor = isBanned ? 'text-slate-400 line-through' : 'text-slate-800';
+                    
+                    const btnBanColor = isBanned ? 'text-red-500 bg-red-50 hover:bg-emerald-50 hover:text-emerald-500 border-red-200' : 'text-slate-400 bg-white hover:bg-red-50 hover:text-red-500 border-slate-200';
+                    const btnBanIcon = isBanned ? '<i class="fas fa-lock"></i>' : '<i class="fas fa-lock-open"></i>';
+                    const btnBanTitle = isBanned ? 'Aktifkan Kembali Akun Ini' : 'Banned Akun Ini';
+
+                    const tr = document.createElement('tr');
+                    tr.className = `hover:bg-slate-50 transition-colors group border-b border-slate-100 last:border-0 ${isBanned ? 'bg-red-50/30' : ''}`;
+                    tr.innerHTML = `
+                        <td class="py-4">
+                            <p class="font-black ${nameColor}">${user.name}</p>
+                            <p class="text-xs text-slate-500">${email}</p>
+                        </td>
+                        <td class="py-4 font-bold text-blue-600 text-center">${user.tokens.toLocaleString('id-ID')} <i class="fas fa-coins text-[10px]"></i></td>
+                        <td class="py-4 text-center">
+                            <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${badgeClass}">${badgeIcon}</span>
+                        </td>
+                        <td class="py-4 text-center">
+                            <div class="flex justify-center gap-2">
+                                <button onclick="toggleBanUser('${email}')" class="${btnBanColor} w-8 h-8 rounded-lg shadow-sm border transition-colors flex items-center justify-center" title="${btnBanTitle}">
+                                    ${btnBanIcon}
+                                </button>
+                                <button onclick="deleteUser('${email}')" class="text-slate-400 hover:text-slate-700 bg-white hover:bg-slate-200 w-8 h-8 rounded-lg shadow-sm border border-slate-200 transition-colors flex items-center justify-center" title="Hapus User">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+                document.getElementById('stat-total-user').innerText = emails.length;
+                document.getElementById('stat-active-user').innerText = activeCount;
+                document.getElementById('stat-banned-user').innerText = bannedCount;
+            }
+        }
+
+        function addUser() {
+            const nameInput = document.getElementById('in-user-name');
+            const emailInput = document.getElementById('in-user-email');
+            const tokenInput = document.getElementById('in-user-token');
+            
+            const name = nameInput.value.trim();
+            const email = emailInput.value.trim().toLowerCase();
+            const tokens = parseInt(tokenInput.value) || 0;
+
+            if (!name) return showToast("Nama tidak boleh kosong!", true);
+            if (!email || !email.includes('@')) return showToast("Format email tidak valid!", true);
+            if (userDatabase.hasOwnProperty(email)) return showToast("Email ini sudah terdaftar!", true);
+
+            userDatabase[email] = { name: name, tokens: tokens, status: 'active' };
+            
+            nameInput.value = ''; emailInput.value = ''; tokenInput.value = '';
+            renderUserTable();
+            showToast(`Pengguna ${name} berhasil ditambahkan!`);
+        }
+
+        function toggleBanUser(email) {
+            const user = userDatabase[email];
+            if (!user) return;
+
+            if (user.status === 'active') {
+                if(confirm(`Banned pengguna ${user.name}? Mereka tidak akan bisa menggunakan sistem.`)) {
+                    user.status = 'banned';
+                    showToast(`Akun ${user.name} telah di-BANNED!`, true);
+                }
+            } else {
+                if(confirm(`Aktifkan kembali akun ${user.name}?`)) {
+                    user.status = 'active';
+                    showToast(`Akun ${user.name} berhasil diaktifkan!`);
+                }
+            }
+            renderUserTable();
+        }
+
+        function deleteUser(email) {
+            if (confirm(`YAKIN INGIN MENGHAPUS PERMANEN pengguna '${userDatabase[email].name}'? Data tidak bisa dikembalikan.`)) {
+                delete userDatabase[email];
+                renderUserTable();
+                showToast(`Pengguna dihapus permanen.`, true);
+            }
+        }
+
+        // ==========================================
+        // 6. EXPORT DATABASE (vouchers + users)
+        // ==========================================
+        function generateScriptContent() {
+            let script = "// FILE DATABASE UTAMA (database.js)\n";
+            script += "// File ini di-generate secara otomatis melalui Admin Panel.\n";
+            script += "// Upload file ini ke server untuk mengupdate data Voucher & Pengguna.\n\n";
+            
+            // Ekspor Vouchers
+            script += "const validVouchers = {\n";
+            let vEntries = [];
+            for (const [code, amount] of Object.entries(voucherDatabase)) {
+                vEntries.push(`    '${code}': ${amount}`);
+            }
+            script += vEntries.join(",\n");
+            script += "\n};\n\n";
+
+            // Ekspor Users
+            script += "const registeredUsers = {\n";
+            let uEntries = [];
+            for (const [email, data] of Object.entries(userDatabase)) {
+                uEntries.push(`    '${email}': { name: '${data.name}', tokens: ${data.tokens}, status: '${data.status}' }`);
+            }
+            script += uEntries.join(",\n");
+            script += "\n};\n";
+
+            return script;
+        }
+
+        function exportDatabaseJS() {
+            const scriptContent = generateScriptContent();
+            const blob = new Blob([scriptContent], { type: 'application/javascript' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = 'database.js';
+            document.body.appendChild(a);
+            a.click();
+            
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            
+            showToast("database.js berhasil diunduh! Silakan upload ke server Anda.");
+        }
+
+        function copyToClipboard() {
+            const scriptContent = generateScriptContent();
+            const tempTextArea = document.createElement('textarea');
+            tempTextArea.value = scriptContent;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            
+            try {
+                document.execCommand('copy');
+                showToast("Script berhasil disalin ke Clipboard!");
+            } catch (err) {
+                showToast("Gagal menyalin script.", true);
+            } finally {
+                document.body.removeChild(tempTextArea);
+            }
+        }
+
+        // INISIALISASI AWAL (Render Semua View)
+        renderUserTable();
+        renderVoucherTable();
+        switchView('user'); // Set tampilan default ke Users
+    </script>
+</body>
+</html>
